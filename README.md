@@ -18,7 +18,7 @@ All skills in the repository should follow the following naming convention: `kot
 
 Please open an issue to add additional categories.
 
-`<functional-name>` should be a short, descriptive name of the skill, using snake-case naming convention. 
+`<functional-name>` should be a short, descriptive name of the skill, using kebab-case naming convention. 
 
 ### Repository layout
 

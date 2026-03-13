@@ -61,6 +61,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Validate directory name for ${{ matrix.skill }}
+        run: |
+          # The directory name should follow the format: kotlin-<category>-<functional-name>
+          # <category> is from the CATEGORIES file
+          # <functional-name> is kebab-case
+          
+          SKILL_DIR=$(basename ${{ matrix.skill }})
+          echo "Validating directory name: $SKILL_DIR"
+          
+          if [[ ! $SKILL_DIR =~ ^kotlin-([a-z0-9]+)-([a-z0-9-]+)$ ]]; then
+            echo "Error: Skill directory name '$SKILL_DIR' does not follow the format 'kotlin-<category>-<functional-name>'"
+            exit 1
+          fi
+          
+          CATEGORY="${BASH_REMATCH[1]}"
+          FUNCTIONAL_NAME="${BASH_REMATCH[2]}"
+          
+          # Check if category is valid
+          if ! grep -Fxq "$CATEGORY" CATEGORIES; then
+            echo "Error: Category '$CATEGORY' is not one of the predefined categories in CATEGORIES file."
+            echo "Allowed categories are:"
+            cat CATEGORIES
+            exit 1
+          fi
+          
+          # Functional name must be kebab-case
+          if [[ ! $FUNCTIONAL_NAME =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "Error: Functional name '$FUNCTIONAL_NAME' must be in kebab-case (lowercase, digits, and hyphens)."
+            exit 1
+          fi
+          
+          echo "Directory name validation passed."
+
       - name: Validate ${{ matrix.skill }}
         uses: Flash-Brew-Digital/validate-skill@v1
         with:
