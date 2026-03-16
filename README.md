@@ -16,6 +16,7 @@ frontmatter (name and description) followed by the guidance your coding agent fo
 All skills in the repository should follow the following naming convention: `kotlin-<category>-<functional-name>`.
 
 `<category>` here is one of predefined categories. Current categories are:
+- `backend` - server-side development skills, such as correct use of Spring, JPA, and other backend frameworks with Kotlin
 - `tooling` - any tooling related skills, for example build tooling one
 
 Please open an issue to add additional categories.
