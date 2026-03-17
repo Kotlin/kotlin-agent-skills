@@ -23,6 +23,26 @@ Please open an issue to add additional categories.
 
 `<functional-name>` should be a short, descriptive name of the skill, using kebab-case naming convention. 
 
+## Installation
+
+### Using the skills CLI
+
+Install skills from this repository:
+
+```bash
+npx skills add Kotlin/kotlin-agent-skills
+```
+
+See [npx skills](https://github.com/vercel-labs/skills) for more options.
+
+### Manual installation
+
+Copy the desired skill folder from [skills](./skills) into the skills directory of your agent, for example:
+
+```bash
+cp -r skills/kotlin-tooling-agp9-migration .claude/skills/
+```
+
 ### Repository layout
 
 - [skills/](./skills) - a directory where all skills are located
