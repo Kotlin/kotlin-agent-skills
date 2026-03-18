@@ -39,8 +39,12 @@ jobs:
             HEAD=${{ github.event.after }}
           fi
 
+          # Use merge-base so we only see changes introduced by the PR branch,
+          # not changes from other PRs merged into main since the branch diverged
+          MERGE_BASE=$(git merge-base $BASE $HEAD)
+
           # Find changed SKILL.md files and extract skill directories
-          SKILLS=$(git diff --name-only $BASE $HEAD | \
+          SKILLS=$(git diff --name-only $MERGE_BASE $HEAD | \
             grep 'SKILL.md$' | \
             xargs -I {} dirname {} | \
             sort -u | \
