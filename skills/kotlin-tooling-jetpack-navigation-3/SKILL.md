@@ -132,13 +132,13 @@ val entryProvider = entryProvider {
 
 For a Navigation 2 migration, the official step order is:
 
-1. add Navigation 3 dependencies
-2. make routes implement `NavKey`
-3. create classes that hold and mutate navigation state
-4. replace `NavController` usage with those classes
-5. move destinations from `NavHost` into an `entryProvider`
-6. replace `NavHost` with `NavDisplay`
-7. remove Navigation 2 dependencies
+1. Add Navigation 3 dependencies.
+2. Make routes implement `NavKey`.
+3. Create classes that hold and mutate navigation state.
+4. Replace `NavController` usage with those classes.
+5. Move destinations from `NavHost` into an `entryProvider`.
+6. Replace `NavHost` with `NavDisplay`.
+7. Remove Navigation 2 dependencies.
 
 When rendering:
 
