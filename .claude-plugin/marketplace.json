@@ -1,0 +1,14 @@
+{
+  "name": "Kotlin",
+  "owner": {
+    "name": "JetBrains"
+  },
+  "plugins": [
+    {
+      "name": "kotlin-agent-skills",
+      "source": "./plugins/kotlin-agent-skills",
+      "description": "AI agent skills for Kotlin projects.",
+      "version": "1.0.0"
+    }
+  ]
+}

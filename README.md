@@ -35,6 +35,16 @@ npx skills add Kotlin/kotlin-agent-skills
 
 See [npx skills](https://github.com/vercel-labs/skills) for more options.
 
+### Claude Code
+
+```sh
+/plugin marketplace add Kotlin/kotlin-agent-skills
+```
+
+```sh
+/plugin install kotlin-agent-skills@Kotlin
+```
+
 ### Manual installation
 
 Copy the desired skill folder from [skills](./skills) into the skills directory of your agent, for example:

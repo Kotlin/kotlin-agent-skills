@@ -1,0 +1,15 @@
+{
+  "name": "kotlin-agent-skills",
+  "version": "1.0.0",
+  "description": "AI agent skills for Kotlin projects.",
+  "author": {
+    "name": "JetBrains"
+  },
+  "repository": "https://github.com/Kotlin/kotlin-agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "kotlin",
+    "kotlin multiplatform",
+    "kmp"
+  ]
+}
