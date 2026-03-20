@@ -251,13 +251,11 @@ If the project uses `dev.gitlive:firebase-*` or similar KMP wrapper libraries, t
 
 See [common-pods-mapping.md](references/common-pods-mapping.md) § dev.gitlive and [troubleshooting.md](references/troubleshooting.md) for code snippets and the full product list.
 
-### 3.5 Add language settings
+### 3.5 Add opt-in for cinterop API
 
 ```kotlin
-sourceSets.configureEach {
-    languageSettings {
-        optIn("kotlinx.cinterop.ExperimentalForeignApi")
-    }
+kotlin.compilerOptions {
+    optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
 }
 ```
 
