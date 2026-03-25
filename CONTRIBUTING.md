@@ -17,6 +17,7 @@ Check out the [skill-creator](https://github.com/anthropics/skills) skill.
 
 - ✅ Skill has working SKILL.md with YAML frontmatter
 - ✅ Clear documentation and use cases
+- ✅ Skill category is properly selected
 - ✅ No security vulnerabilities or malicious code
 
 ## Adding a new skills distribution way
