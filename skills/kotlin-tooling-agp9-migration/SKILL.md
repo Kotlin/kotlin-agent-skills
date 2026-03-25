@@ -137,17 +137,17 @@ Summary:
     }
     ```
 11. **Resolve Sub-dependency Variants (Product Flavors / Build Types)**:
-    Because the new KMP Android library plugin enforces a single-variant architecture, it does not natively understand how to resolve dependencies that publish multiple variants (e.g., `debug`/`release` or flavor dimensions). Configure fallback behaviors using `localDependencySelection`:
+    Because the new KMP Android library plugin enforces a single-variant architecture, it does not natively understand how to resolve dependencies that publish multiple variants (like `debug`/`release` build types, or product flavors like `free`/`paid`). Configure fallback behaviors using `localDependencySelection`:
     ```kotlin
     kotlin {
         android {
             localDependencySelection {
-                // Determine which build type to consume from Android library dependencies
+                // Determine which build type to consume from Android library dependencies, in order of preference
                 selectBuildTypeFrom.set(listOf("debug", "release"))
                 
-                // If the dependency has flavors, define the matching fallback
-                productFlavorDimension("type") {
-                    selectFrom.set(listOf("typeone"))
+                // If the dependency has a 'tier' dimension, select the 'free' flavor
+                productFlavorDimension("tier") {
+                    selectFrom.set(listOf("free"))
                 }
             }
         }
