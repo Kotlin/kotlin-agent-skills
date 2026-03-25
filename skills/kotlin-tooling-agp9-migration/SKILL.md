@@ -93,7 +93,7 @@ Summary:
        }
    }
    ```
-6. **Enable resources** explicitly if the module uses Android resources:
+6. **Enable resources** explicitly if the module uses Android or Compose Multiplatform resources:
    ```kotlin
    kotlin {
        android {
