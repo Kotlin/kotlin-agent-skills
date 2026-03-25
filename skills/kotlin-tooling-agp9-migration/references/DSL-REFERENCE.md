@@ -187,6 +187,15 @@ resources {
 
 ---
 
+## Dependency Resolution
+Because the new KMP Android library plugin is strictly single-variant, you can no longer define fallback logic inside `buildTypes` or `defaultConfig`.
+| Old | New | Notes |
+|---|---|---|
+| `android { defaultConfig { missingDimensionStrategy("tier", "free") } }` | `kotlin { android { localDependencySelection { productFlavorDimension("tier") { selectFrom.set(listOf("free")) } } } }` | Configure dependency flavor fallbacks |
+| `android { buildTypes { getByName("debug") { matchingFallbacks.add("release") } } }` | `kotlin { android { localDependencySelection { selectBuildTypeFrom.set(listOf("debug", "release")) } } }` | Configure dependency build type mapping |
+
+---
+
 ## Build Types and Product Flavors
 
 **Removed in KMP library plugin.** The `com.android.kotlin.multiplatform.library` plugin produces a single build variant.
