@@ -25,7 +25,7 @@ Use this checklist after migration to verify everything is configured correctly.
 - [ ] No `android {}` top-level block in KMP library modules
 
 ## Android-Specific Features
-- [ ] `androidResources { enable = true }` present if module uses Android resources
+- [ ] `androidResources { enable = true }` present if module uses Android or Compose Multiplatform resources
 - [ ] `withJava()` present if module has .java source files
 
 ## Testing
