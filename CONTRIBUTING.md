@@ -2,7 +2,7 @@
 
 ## Adding new skills
 
-We are only accepting skills that are convering Kotlin language itself or `kotlinx.` libraries. Before
+We are only accepting skills that are covering Kotlin language itself or `kotlinx.` libraries. Before
 submitting a skill, prefer opening a new issue and describing the skill you want to add. 
 We will review it and provide feedback.
 
