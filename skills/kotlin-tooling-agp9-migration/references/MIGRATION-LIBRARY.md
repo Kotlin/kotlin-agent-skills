@@ -433,6 +433,48 @@ kotlin {
 
 ---
 
+## Dependency Resolution Details
+
+When your KMP module depends on a legacy Android library that exposes multiple variants (e.g., `debug`/`release` build types or custom flavor dimensions like `free`/`paid`), you must explicitly define how to resolve them using the `localDependencySelection` DSL.
+
+### Before
+
+```kotlin
+android {
+    defaultConfig {
+        // The consuming module doesn't have a 'tier' dimension,
+        // so it tells Gradle to use the 'free' flavor of dependencies
+        missingDimensionStrategy("tier", "free")
+    }
+    buildTypes {
+        getByName("debug") {
+            // If the dependency doesn't have a 'debug' build type, fallback to 'release'
+            matchingFallbacks.add("release")
+        }
+    }
+}
+```
+
+### After
+
+```kotlin
+kotlin {
+    android {
+        localDependencySelection {
+            // Determine which build type to consume from Android library dependencies, in order of preference
+            selectBuildTypeFrom.set(listOf("debug", "release"))
+            
+            // Map the missing custom flavor dimensions directly
+            productFlavorDimension("tier") {
+                selectFrom.set(listOf("free"))
+            }
+        }
+    }
+}
+```
+
+---
+
 ## Android Resources
 
 Android resources (`res/`) are not processed by default with the new plugin. You must explicitly enable them:
