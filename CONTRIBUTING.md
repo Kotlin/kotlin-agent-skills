@@ -9,6 +9,10 @@ We will review it and provide feedback.
 We will **not** accept skills that are using/adding some third-party dependencies. Exception is well-known and widely
 used libraries.
 
+### How to create a new skill
+
+Check out the [skill-creator](https://github.com/anthropics/skills) skill.
+
 ## Adding a new skills distribution way
 
 Prefer opening a new issue and describing the new distribution way you want to add. 
