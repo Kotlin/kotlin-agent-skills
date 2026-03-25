@@ -433,7 +433,7 @@ kotlin {
 
 ---
 
-## Dependency ResolutionDetails
+## Dependency Resolution Details
 
 When your KMP module depends on a legacy Android library that exposes multiple variants (e.g., `debug`/`release` build types or custom flavor dimensions like `free`/`paid`), you must explicitly define how to resolve them using the `localDependencySelection` DSL.
 
