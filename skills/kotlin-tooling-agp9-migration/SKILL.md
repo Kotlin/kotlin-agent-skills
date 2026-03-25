@@ -136,7 +136,7 @@ Summary:
         }
     }
     ```
-11. **Resolve Sub-dependency Variants (Flavors / Types)**:
+11. **Resolve Sub-dependency Variants (Product Flavors / Build Types)**:
     Because the new KMP Android library plugin enforces a single-variant architecture, it does not natively understand how to resolve dependencies that publish multiple variants (e.g., `debug`/`release` or flavor dimensions). Configure fallback behaviors using `localDependencySelection`:
     ```kotlin
     kotlin {
