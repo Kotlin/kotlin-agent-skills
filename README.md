@@ -56,3 +56,7 @@ cp -r skills/kotlin-tooling-agp9-migration .claude/skills/
 ### Repository layout
 
 - [skills/](./skills) - a directory where all skills are located
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
