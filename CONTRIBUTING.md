@@ -11,7 +11,7 @@ used libraries.
 
 ### How to create a new skill
 
-Check out the [skill-creator](https://github.com/anthropics/skills) skill.
+Check out the [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) skill.
 
 ### Quick contribution checklist
 
