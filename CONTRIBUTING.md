@@ -15,7 +15,8 @@ Check out the [skill-creator](https://github.com/anthropics/skills) skill.
 
 ### Quick contribution checklist
 
-- ✅ Skill has working SKILL.md with YAML frontmatter
+- ✅ The skill must follow the [Agent Skills specification](https://agentskills.io/specification)
+- ✅ Skill has working SKILL.md with YAML frontmatter where `name` and `description` are required fields
 - ✅ Clear documentation and use cases
 - ✅ Skill category is properly selected
 - ✅ No security vulnerabilities or malicious code
