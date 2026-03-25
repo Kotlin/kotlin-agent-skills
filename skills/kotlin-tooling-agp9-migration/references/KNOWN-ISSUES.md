@@ -260,7 +260,7 @@ class MyConventionPlugin : Plugin<Project> {
 
 ---
 
-## 7. androidUnitTest to androidHostTest Rename
+## 7. Renamed test source sets
 
 **Problem:** The source set `androidUnitTest` is renamed to `androidHostTest`. The source set `androidInstrumentedTest` is renamed to `androidDeviceTest`. The old names still work as aliases but are deprecated.
 
