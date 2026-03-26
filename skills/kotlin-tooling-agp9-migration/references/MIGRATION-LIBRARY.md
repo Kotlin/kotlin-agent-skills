@@ -82,7 +82,7 @@ kotlin {
 }
 
 dependencies {
-    "androidRuntimeClasspath"(libs.compose.ui.tooling)
+    androidRuntimeClasspath(libs.compose.ui.tooling)
 }
 ```
 
@@ -107,7 +107,7 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 ```toml
 [versions]
 agp = "9.0.1"
-kotlin = "2.3.0"
+kotlin = "2.3.20"
 
 [plugins]
 androidKmpLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
@@ -130,7 +130,7 @@ plugins {
 ```kotlin
 plugins {
     id("com.android.kotlin.multiplatform.library") version "9.0.1" apply false
-    id("org.jetbrains.kotlin.multiplatform") version "2.3.0" apply false
+    id("org.jetbrains.kotlin.multiplatform") version "2.3.20" apply false
 }
 ```
 
@@ -190,7 +190,7 @@ plugins {
 ```kotlin
 plugins {
     id("com.android.kotlin.multiplatform.library") version "9.0.1" apply false
-    id("org.jetbrains.kotlin.multiplatform") version "2.3.0" apply false
+    id("org.jetbrains.kotlin.multiplatform") version "2.3.20" apply false
 }
 ```
 

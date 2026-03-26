@@ -9,7 +9,7 @@ which plugins the project uses and whether they are compatible.**
 
 | Plugin | Minimum Compatible Version | Notes |
 |--------|---------------------------|-------|
-| `com.google.devtools.ksp` | 2.3.4 | May need `android.disallowKotlinSourceSets=false` |
+| `com.google.devtools.ksp` | 2.3.1 (2.3.3+ recommended) | 2.3.1 adds AGP 9.0 support; 2.3.3+ fixes deprecated compilerOptions KGP API usage. May need `android.disallowKotlinSourceSets=false` |
 | `com.google.dagger.hilt.android` | 2.59 | — |
 | `com.google.firebase.firebase-perf` | 2.0.2 | — |
 | `androidx.navigation.safeargs` | 2.9.5 | — |

@@ -22,7 +22,6 @@ migration.
 ## Step 0: Analyze the Project
 
 Before making any changes, understand the project structure:
-
 1. Read `settings.gradle.kts` (or `.gradle`) to find all modules
 2. For each module, read its `build.gradle.kts` to identify which plugins are applied
 3. Check if the project uses a Gradle version catalog (`gradle/libs.versions.toml`). If it exists,
@@ -36,19 +35,18 @@ Before making any changes, understand the project structure:
 7. Check for `org.jetbrains.kotlin.kapt` plugin usage — incompatible with built-in Kotlin, must migrate to KSP or `com.android.legacy-kapt`
 8. Check for third-party plugins that may be incompatible with AGP 9.0 (see "Plugin Compatibility" section below)
 
-If Bash is available, run `scripts/analyze-project.sh` from this skill's directory to get a
-structured summary.
+If Bash is available, run `scripts/analyze-project.sh` from this skill's directory to get a structured summary.
 
 ### Classify Each Module
 
 For each module, determine its type:
 
-| Current plugins | Migration path |
-|----------------|----------------|
-| `kotlin.multiplatform` + `com.android.library` | **Path A** — Library plugin swap |
-| `kotlin.multiplatform` + `com.android.application` | **Path B** — Mandatory Android split |
+| Current plugins                                                          | Migration path                              |
+|--------------------------------------------------------------------------|---------------------------------------------|
+| `kotlin.multiplatform` + `com.android.library`                           | **Path A** — Library plugin swap            |
+| `kotlin.multiplatform` + `com.android.application`                       | **Path B** — Mandatory Android split        |
 | `kotlin.multiplatform` with multiple platform entry points in one module | **Path C** — Full restructure (recommended) |
-| `com.android.application` or `com.android.library` (no KMP) | See "Pure Android Tips" below |
+| `com.android.application` or `com.android.library` (no KMP)              | See "Pure Android Tips" below               |
 
 ### Determine Scope
 
@@ -122,11 +120,10 @@ Summary:
    ```
 9. **Update Compose tooling dependency**:
    ```kotlin
-   // Old: debugImplementation(libs.androidx.compose.ui.tooling)
+   // Old: 
+   debugImplementation(libs.androidx.compose.ui.tooling)
    // New:
-   dependencies {
-       androidRuntimeClasspath(libs.androidx.compose.ui.tooling)
-   }
+   androidRuntimeClasspath(libs.androidx.compose.ui.tooling)
    ```
 10. **Publish consumer ProGuard rules** explicitly if applicable:
     ```kotlin
@@ -156,8 +153,7 @@ Summary:
 
 ## Path B: Android App + Shared Module Split
 
-Use this when a module applies `kotlin.multiplatform` + `com.android.application`.
-This is **mandatory** for AGP 9.0 compatibility.
+Use this when a module applies `kotlin.multiplatform` + `com.android.application`. This is **mandatory** for AGP 9.0 compatibility.
 
 See [references/MIGRATION-APP-SPLIT.md](references/MIGRATION-APP-SPLIT.md) for full guide.
 
@@ -266,54 +262,30 @@ These are required regardless of migration path:
    # gradle/wrapper/gradle-wrapper.properties
    distributionUrl=https\://services.gradle.org/distributions/gradle-9.1.0-bin.zip
    ```
-2. **AGP version** — update to 9.0.0+.
+2. **AGP version** — update to 9.0.0+ and add the KMP library plugin.
 
-   If using a version catalog (`gradle/libs.versions.toml`):
+   With version catalog (`gradle/libs.versions.toml`):
    ```toml
    [versions]
-   agp = "9.0.0"
-   ```
+   agp = "9.0.1"
 
-   If versions are set directly in build files, update all `com.android.*` plugin version strings:
-   ```kotlin
-   // root build.gradle.kts
-   plugins {
-       id("com.android.application") version "9.0.0" apply false
-   }
-   ```
-3. **Add the KMP library plugin**.
-
-   With version catalog:
-   ```toml
    [plugins]
    android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
    ```
 
-   Without version catalog — use the plugin ID directly in build files:
+   Without version catalog — update `com.android.*` plugin versions and add in root `build.gradle.kts`:
    ```kotlin
-   // root build.gradle.kts
    plugins {
-       id("com.android.kotlin.multiplatform.library") version "9.0.0" apply false
-   }
-   // module build.gradle.kts
-   plugins {
-       id("com.android.kotlin.multiplatform.library")
+       id("com.android.application") version "9.0.1" apply false
+       id("com.android.kotlin.multiplatform.library") version "9.0.1" apply false
    }
    ```
-4. **Root build.gradle.kts** — add `apply false` for new plugin (see examples above)
-5. **JDK** — ensure JDK 17+ is used (required by AGP 9.0)
-6. **SDK Build Tools** — update to 36.0.0:
+3. **JDK** — ensure JDK 17+ is used (required by AGP 9.0)
+4. **SDK Build Tools** — update to 36.0.0:
    ```
    Install via SDK Manager or configure in android { buildToolsVersion = "36.0.0" }
    ```
-7. **Remove legacy workarounds** from `gradle.properties`:
-   - Remove `android.enableLegacyVariantApi=true` (removed in AGP 9.0, causes error if present)
-   - Remove `android.r8.integratedResourceShrinking` (removed in AGP 9.0, causes error if present)
-   - Remove `android.enableNewResourceShrinker.preciseShrinking` (removed in AGP 9.0, causes error if present)
-   - Remove `android.builtInKotlin=false` (unless needed for plugin compatibility — see Plugin Compatibility)
-   - Remove `android.newDsl=false` (unless needed for plugin compatibility)
-8. **Review gradle.properties defaults** — see "Gradle Properties Default Changes" section for properties
-   whose defaults changed in AGP 9.0
+5. **Review gradle.properties** — remove error-causing properties and review changed defaults (see "Gradle Properties Default Changes" section)
 
 ## Built-in Kotlin Migration
 
@@ -322,12 +294,6 @@ modules. The `org.jetbrains.kotlin.android` plugin is no longer needed and will 
 
 **Important:** Built-in Kotlin does NOT replace KMP support. KMP library modules still need
 `org.jetbrains.kotlin.multiplatform` + `com.android.kotlin.multiplatform.library`.
-
-### Detection
-
-Check if the project uses `org.jetbrains.kotlin.android` or `kotlin-android` in any build files.
-If found, this migration is needed. If not, check `gradle.properties` for `android.builtInKotlin=false`
-which may indicate a previous opt-out.
 
 ### Step 1: Remove kotlin-android Plugin
 
@@ -376,7 +342,6 @@ plugins {
 
 For pure Android modules (non-KMP), migrate `android.kotlinOptions {}` to the top-level
 `kotlin.compilerOptions {}`:
-
 ```kotlin
 // Old
 android {
@@ -397,13 +362,11 @@ kotlin {
 }
 ```
 
-**Note:** With built-in Kotlin, `jvmTarget` defaults to `android.compileOptions.targetCompatibility`,
-so it may be optional if you already set `compileOptions`.
+**Note:** With built-in Kotlin, `jvmTarget` defaults to `android.compileOptions.targetCompatibility`, so it may be optional if you already set `compileOptions`.
 
 ### Step 4: Migrate kotlin.sourceSets to android.sourceSets
 
 With built-in Kotlin, only `android.sourceSets {}` with the `kotlin` set is supported:
-
 ```kotlin
 // NOT SUPPORTED with built-in Kotlin:
 kotlin.sourceSets.named("main") {
@@ -440,7 +403,6 @@ For large projects, migrate module-by-module:
 ### Optional: Disable Kotlin for Non-Kotlin Modules
 
 For modules that contain **no Kotlin sources**, disable built-in Kotlin to save build time:
-
 ```kotlin
 android {
     enableKotlin = false
@@ -450,44 +412,39 @@ android {
 ### Opt-Out (Temporary)
 
 If blocked by plugin incompatibilities, opt out temporarily:
-
 ```properties
 # gradle.properties
 android.builtInKotlin=false
 android.newDsl=false  # also required if using new DSL opt-out
 ```
 
-**Warning:** Ask the user if they want to opt out, and if so,
-remind them this is a temporary measure.
+**Warning:** Ask the user if they want to opt out, and if so, remind them this is a temporary measure.
 
 ## Plugin Compatibility
 
-See [references/PLUGIN-COMPATIBILITY.md](references/PLUGIN-COMPATIBILITY.md) for the full compatibility
-table with known compatible versions, opt-out flag workarounds, and broken plugins.
+See [references/PLUGIN-COMPATIBILITY.md](references/PLUGIN-COMPATIBILITY.md) for the full compatibility table with known compatible versions, opt-out flag workarounds, and broken plugins.
 
-**Before migrating**, inventory all plugins in the project and check each against that table. If any
-plugin is broken without workaround, inform the user. If plugins need opt-out flags, add them to
-`gradle.properties` and note them as temporary workarounds.
+**Before migrating**, inventory all plugins in the project and check each against that table. If any plugin is broken without workaround, inform the user. If plugins need opt-out flags, add them to`gradle.properties` and note them as temporary workarounds.
 
 ## Gradle Properties Default Changes
 
-AGP 9.0 changes the defaults for many gradle properties. Check `gradle.properties` for any explicitly
-set values that may now conflict. Key changes:
+AGP 9.0 changes the defaults for many Gradle properties. Check `gradle.properties` for any explicitly set values that may now conflict. 
+Key changes:
 
-| Property | Old Default | New Default | Action |
-|----------|-------------|-------------|--------|
-| `android.uniquePackageNames` | `false` | `true` | Ensure each library has a unique namespace |
-| `android.enableAppCompileTimeRClass` | `false` | `true` | Refactor `switch` on R fields to `if/else` |
-| `android.defaults.buildfeatures.resvalues` | `true` | `false` | Enable `resValues = true` where needed |
-| `android.defaults.buildfeatures.shaders` | `true` | `false` | Enable shaders where needed |
-| `android.r8.optimizedResourceShrinking` | `false` | `true` | Review R8 keep rules |
-| `android.r8.strictFullModeForKeepRules` | `false` | `true` | Update keep rules to be explicit |
-| `android.proguard.failOnMissingFiles` | `false` | `true` | Remove invalid ProGuard file references |
-| `android.r8.proguardAndroidTxt.disallowed` | `false` | `true` | Use `proguard-android-optimize.txt` only |
-| `android.r8.globalOptionsInConsumerRules.disallowed` | `false` | `true` | Remove global options from library consumer rules |
-| `android.sourceset.disallowProvider` | `false` | `true` | Use `Sources` API on androidComponents |
-| `android.sdk.defaultTargetSdkToCompileSdkIfUnset` | `false` | `true` | Specify `targetSdk` explicitly |
-| `android.onlyEnableUnitTestForTheTestedBuildType` | `false` | `true` | Only if testing non-default build types |
+| Property                                             | Old Default | New Default | Action                                            |
+|------------------------------------------------------|-------------|-------------|---------------------------------------------------|
+| `android.uniquePackageNames`                         | `false`     | `true`      | Ensure each library has a unique namespace        |
+| `android.enableAppCompileTimeRClass`                 | `false`     | `true`      | Refactor `switch` on R fields to `if/else`        |
+| `android.defaults.buildfeatures.resvalues`           | `true`      | `false`     | Enable `resValues = true` where needed            |
+| `android.defaults.buildfeatures.shaders`             | `true`      | `false`     | Enable shaders where needed                       |
+| `android.r8.optimizedResourceShrinking`              | `false`     | `true`      | Review R8 keep rules                              |
+| `android.r8.strictFullModeForKeepRules`              | `false`     | `true`      | Update keep rules to be explicit                  |
+| `android.proguard.failOnMissingFiles`                | `false`     | `true`      | Remove invalid ProGuard file references           |
+| `android.r8.proguardAndroidTxt.disallowed`           | `false`     | `true`      | Use `proguard-android-optimize.txt` only          |
+| `android.r8.globalOptionsInConsumerRules.disallowed` | `false`     | `true`      | Remove global options from library consumer rules |
+| `android.sourceset.disallowProvider`                 | `false`     | `true`      | Use `Sources` API on androidComponents            |
+| `android.sdk.defaultTargetSdkToCompileSdkIfUnset`    | `false`     | `true`      | Specify `targetSdk` explicitly                    |
+| `android.onlyEnableUnitTestForTheTestedBuildType`    | `false`     | `true`      | Only if testing non-default build types           |
 
 Check for and remove properties that now cause errors:
 - `android.r8.integratedResourceShrinking` — removed, always on
@@ -495,30 +452,23 @@ Check for and remove properties that now cause errors:
 
 ## Pure Android Tips
 
-For non-KMP Android modules upgrading to AGP 9.0:
+For non-KMP Android modules upgrading to AGP 9.0, follow the "Built-in Kotlin Migration" steps above,
+then review the "Gradle Properties Default Changes" table. Additional changes:
 
-- **Remove `org.jetbrains.kotlin.android`** plugin — AGP 9.0 includes Kotlin support built-in (see "Built-in Kotlin Migration" above)
-- **Migrate kapt** to KSP or `com.android.legacy-kapt`
-- **Migrate `kotlinOptions`** to `kotlin { compilerOptions {} }`
-- **Migrate `kotlin.sourceSets`** to `android.sourceSets` with `.kotlin` accessor
 - **Review new DSL interfaces** — `BaseExtension` is removed; use `CommonExtension` or specific extension types
 - **Java default changed** from Java 8 to Java 11 — ensure `compileOptions` reflects this
-- **R class is now compile-time non-final** in app modules — refactor any `switch` statements on R class fields to `if/else`
-- **targetSdk defaults to compileSdk** if not set — specify `targetSdk` explicitly to avoid surprises
-- **NDK default changed to r28c** — specify `ndkVersion` explicitly if using native code
-- **Temporary opt-out**: `android.builtInKotlin=false` + `android.newDsl=false` in `gradle.properties` (removed in AGP 10)
 
 ## Verification
 
 After migration, verify with the [checklist](assets/checklist.md). Key checks:
 
 1. `./gradlew build` succeeds with no errors
-2. `./gradlew :androidApp:assembleDebug` succeeds (if app module exists)
-3. No `com.android.library` or `com.android.application` in KMP modules
-4. No `org.jetbrains.kotlin.android` in AGP 9.0 modules
-5. Source sets use correct names (`androidMain`, `androidHostTest`, `androidDeviceTest`)
-6. No deprecation warnings about variant API
-7. Run configurations point to correct modules
+2. All platform targets build successfully (Android, iOS via `xcodebuild`, Desktop, JS/Wasm)
+3. `./gradlew :shared:allTests` and Android unit tests pass
+4. No `com.android.library` or `com.android.application` in KMP modules
+5. No `org.jetbrains.kotlin.android` in AGP 9.0 modules
+6. Source sets use correct names (`androidMain`, `androidHostTest`, `androidDeviceTest`)
+7. No deprecation warnings about variant API or DSL
 
 ## Common Issues
 
@@ -528,22 +478,17 @@ See [references/KNOWN-ISSUES.md](references/KNOWN-ISSUES.md) for details. Key go
 - **BuildConfig unavailable** in library modules — use DI/`AppConfiguration` interface, or use [BuildKonfig](https://github.com/yshrsmz/BuildKonfig) or [gradle-buildconfig-plugin](https://github.com/gmazzo/gradle-buildconfig-plugin) for compile-time constants
 - **No build variants** — single variant architecture; compile-time constants can use BuildKonfig/gradle-buildconfig-plugin flavors, but variant-specific dependencies/resources/signing must move to app module
 - **NDK/JNI unsupported** in new plugin — extract to separate `com.android.library` module
-- **Compose resources crash** without `androidResources { enable = true }` (CMP-9547)
+- **Compose resources crash** without `androidResources { enable = true }`
 - **Consumer ProGuard rules silently dropped** if not migrated to `consumerProguardFiles.add(file(...))` in new DSL
-- **KSP** requires version 2.3.4+ for AGP 9.0 compatibility
+- **KSP** requires version 2.3.1+ for AGP 9.0 compatibility
 
 ### AGP 9.0 General Issues
-- **Built-in Kotlin conflicts** — `org.jetbrains.kotlin.android` must be removed; kapt must be replaced
-- **BaseExtension removed** — convention plugins using old DSL types need rewriting
+- **BaseExtension removed** — convention plugins using old DSL types need rewriting to use `CommonExtension`
 - **Variant APIs removed** — `applicationVariants`, `libraryVariants`, `variantFilter` replaced by `androidComponents`
-- **R class non-final** — `switch` on R fields fails in app modules; refactor to `if/else`
-- **targetSdk defaults to compileSdk** — set explicitly to avoid unexpected behavior changes
-- **R8 rule changes** — strict full mode, no global options in consumer rules
-- **Plugin compatibility** — many plugins need updates or opt-out flags; check Plugin Compatibility section
 - **Convention plugins** need refactoring — old `android {}` extension helpers are obsolete
 
 ## Reference Files
 
 - [DSL Reference](references/DSL-REFERENCE.md) — side-by-side old→new DSL mapping
-- [Version Matrix](references/VERSION-MATRIX.md) — AGP/Gradle/KGP/IDE compatibility
+- [Version Matrix](references/VERSION-MATRIX.md) — AGP/Gradle/KGP/Compose/IDE compatibility
 - [Plugin Compatibility](references/PLUGIN-COMPATIBILITY.md) — third-party plugin status and workarounds
