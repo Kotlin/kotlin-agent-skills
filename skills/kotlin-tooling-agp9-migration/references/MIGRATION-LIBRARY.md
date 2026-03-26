@@ -515,5 +515,5 @@ The `LibraryExtension` class from AGP is no longer used. All Android configurati
 - [ ] Rename test source dirs: `androidUnitTest` to `androidHostTest`, `androidInstrumentedTest` to `androidDeviceTest`
 - [ ] Update root `build.gradle.kts` plugin declarations
 - [ ] Run `./gradlew :module:assemble` to verify
-- [ ] Run `./gradlew :module:testAndroidHostTest` to verify host tests run
-- [ ] Run `./gradlew :module:assembleAndroidDeviceTest` to verify device test apk builds successfully
+- [ ] Run `./gradlew :module:testAndroidHostTest` if using host tests
+- [ ] Run `./gradlew :module:assembleAndroidDeviceTest` if using device tests
