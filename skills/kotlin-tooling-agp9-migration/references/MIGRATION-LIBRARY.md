@@ -506,8 +506,8 @@ The `LibraryExtension` class from AGP is no longer used. All Android configurati
 - [ ] Replace `androidTarget {}` with `android {}`
 - [ ] Replace `kotlinOptions` with `compilerOptions`
 - [ ] Enable `androidResources` if using Android resources
-- [ ] Enable `withHostTest {}` if using host tests
-- [ ] Enable `withDeviceTest {}` if using device tests
+- [ ] Enable `withHostTest {}` if there are any android host tests or common tests
+- [ ] Enable `withDeviceTest {}` if there are any android device tests
 - [ ] Add `withJava()` if module contains Java source files
 - [ ] Move consumer ProGuard rules to new DSL
 - [ ] Migrate top-level `dependencies` to source set dependencies
@@ -515,5 +515,5 @@ The `LibraryExtension` class from AGP is no longer used. All Android configurati
 - [ ] Rename test source dirs: `androidUnitTest` to `androidHostTest`, `androidInstrumentedTest` to `androidDeviceTest`
 - [ ] Update root `build.gradle.kts` plugin declarations
 - [ ] Run `./gradlew :module:assemble` to verify
-- [ ] Run `./gradlew :module:testAndroidHostTest` if using host tests
-- [ ] Run `./gradlew :module:assembleAndroidDeviceTest` if using device tests
+- [ ] Run `./gradlew :module:testAndroidHostTest` if there are any android host tests or common tests
+- [ ] Run `./gradlew :module:assembleAndroidDeviceTest` if there are any android device tests
