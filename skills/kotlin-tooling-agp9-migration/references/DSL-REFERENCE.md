@@ -98,8 +98,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 | `android { testOptions { animationsDisabled = true } }`              | `kotlin { android { withDeviceTest { } } }`                                    |
 | Source set: `androidUnitTest`                                        | Source set: `androidHostTest` (alias: `androidUnitTest` still works)           |
 | Source set: `androidInstrumentedTest`                                | Source set: `androidDeviceTest` (alias: `androidInstrumentedTest` still works) |
-| `testImplementation(...)`                                            | `androidHostTest.dependencies { implementation(...) }`                         |
-| `androidTestImplementation(...)`                                     | `androidDeviceTest.dependencies { implementation(...) }`                       |
+| `testImplementation(...)`                                            | `getByName("androidHostTest").dependencies { implementation(...) }`            |
+| `androidTestImplementation(...)`                                     | `getByName("androidDeviceTest").dependencies { implementation(...) }`          |
 | Source dir: `src/test/`                                              | Source dir: `src/androidHostTest/kotlin/`                                      |
 | Source dir: `src/androidTest/`                                       | Source dir: `src/androidDeviceTest/kotlin/`                                    |
 
@@ -173,17 +173,17 @@ resources {
 
 ## Dependencies Configurations
 
-| Old Configuration                | New Configuration                                        | Notes                       |
-|----------------------------------|----------------------------------------------------------|-----------------------------|
-| `implementation(...)`            | `androidMain.dependencies { implementation(...) }`       | Move to source set          |
-| `api(...)`                       | `androidMain.dependencies { api(...) }`                  | Move to source set          |
-| `compileOnly(...)`               | `androidMain.dependencies { compileOnly(...) }`          | Move to source set          |
-| `debugImplementation(...)`       | `"androidRuntimeClasspath"(...)`                         | No variant-specific configs |
-| `releaseImplementation(...)`     | `androidMain.dependencies { implementation(...) }`       | Single variant              |
-| `testImplementation(...)`        | `androidHostTest.dependencies { implementation(...) }`   |                             |
-| `androidTestImplementation(...)` | `androidDeviceTest.dependencies { implementation(...) }` |                             |
-| `ksp(...)`                       | `add("ksp", ...)` or KSP Gradle plugin DSL               | Check KSP compatibility     |
-| `kapt(...)`                      | Migrate to KSP; kapt not supported                       |                             |
+| Old Configuration                | New Configuration                                                     | Notes                       |
+|----------------------------------|-----------------------------------------------------------------------|-----------------------------|
+| `implementation(...)`            | `androidMain.dependencies { implementation(...) }`                    | Move to source set          |
+| `api(...)`                       | `androidMain.dependencies { api(...) }`                               | Move to source set          |
+| `compileOnly(...)`               | `androidMain.dependencies { compileOnly(...) }`                       | Move to source set          |
+| `debugImplementation(...)`       | `"androidRuntimeClasspath"(...)`                                      | No variant-specific configs |
+| `releaseImplementation(...)`     | `androidMain.dependencies { implementation(...) }`                    | Single variant              |
+| `testImplementation(...)`        | `getByName("androidHostTest").dependencies { implementation(...) }`   |                             |
+| `androidTestImplementation(...)` | `getByName("androidDeviceTest").dependencies { implementation(...) }` |                             |
+| `ksp(...)`                       | `add("ksp", ...)` or KSP Gradle plugin DSL                            | Check KSP compatibility     |
+| `kapt(...)`                      | Migrate to KSP; kapt not supported                                    |                             |
 
 ---
 
