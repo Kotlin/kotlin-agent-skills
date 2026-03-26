@@ -269,11 +269,11 @@ kotlin {
     }
 
     sourceSets {
-        androidHostTest.dependencies {
+        getByName("androidHostTest").dependencies {
             implementation(libs.junit)
             implementation(libs.robolectric)
         }
-        androidDeviceTest.dependencies {
+        getByName("androidDeviceTest").dependencies {
             implementation(libs.androidx.test.runner)
             implementation(libs.androidx.test.espresso.core)
         }
@@ -419,10 +419,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.some.lib)
         }
-        androidHostTest.dependencies {
+        getByName("androidHostTest").dependencies {
             implementation(libs.junit)
         }
-        androidDeviceTest.dependencies {
+        getByName("androidDeviceTest").dependencies {
             implementation(libs.androidx.test.runner)
         }
     }
