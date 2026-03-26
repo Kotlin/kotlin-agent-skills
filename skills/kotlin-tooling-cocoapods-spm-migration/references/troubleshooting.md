@@ -318,12 +318,12 @@ swiftPMDependencies {
         url = url("https://github.com/firebase/firebase-ios-sdk.git"),
         version = from("12.6.0"),
         products = listOf(product("FirebaseAnalytics"), /* ... */),
-        importedModules = listOf("FirebaseAnalytics", "FirebaseCore", /* ... */),
+        importedClangModules = listOf("FirebaseAnalytics", "FirebaseCore", /* ... */),
     )
 }
 ```
 
-See [common-pods-mapping.md](common-pods-mapping.md) for the full importedModules reference.
+See [common-pods-mapping.md](common-pods-mapping.md) for the full importedClangModules reference.
 
 ---
 
@@ -331,11 +331,11 @@ See [common-pods-mapping.md](common-pods-mapping.md) for the full importedModule
 
 **Symptom:** `Unresolved reference` for Firebase classes like `FIRDatabase`, `FIRRemoteConfig`, `FIRFirestore`, `FIRInAppMessaging` even though the product is listed.
 
-**Cause:** Several Firebase products expose ObjC headers through Clang modules whose names differ from the SPM product name. Using the product name in `importedModules` won't find the headers.
+**Cause:** Several Firebase products expose ObjC headers through Clang modules whose names differ from the SPM product name. Using the product name in `importedClangModules` won't find the headers.
 
 **Solution:** Use the correct internal Clang module names:
 
-| SPM Product | Correct importedModules entry |
+| SPM Product | Correct importedClangModules entry |
 |---|---|
 | FirebaseDatabase | `FirebaseDatabaseInternal` |
 | FirebaseFirestore | `FirebaseFirestoreInternal` |
@@ -350,14 +350,14 @@ See [common-pods-mapping.md](common-pods-mapping.md) for the full importedModule
 
 **Cause:** Firestore's Clang module name differs from product name. The internal Clang module exposed to Objective-C is `FirebaseFirestoreInternal`, not `FirebaseFirestore`.
 
-**Solution:** Add explicit importedModules:
+**Solution:** Add explicit importedClangModules:
 
 ```kotlin
 swiftPackage(
     url = url("https://github.com/firebase/firebase-ios-sdk.git"),
     version = from("12.6.0"),
     products = listOf(product("FirebaseFirestore")),
-    importedModules = listOf("FirebaseFirestoreInternal"),  // Required
+    importedClangModules = listOf("FirebaseFirestoreInternal"),  // Required
 )
 ```
 
@@ -410,7 +410,7 @@ or similar `_OBJC_CLASS_$_FIR*` symbol-not-found errors. The Gradle build and Xc
 
 **Cause:** Some Firebase pods were migrated to SPM while others remained in CocoaPods. All Firebase products share transitive dependencies (gRPC, abseil, leveldb, BoringSSL, nanopb). Having both package managers link these transitive dependencies causes duplicate/conflicting symbols that the dynamic linker cannot resolve.
 
-**Solution:** Migrate **all** Firebase pods to SPM at once. This includes Swift-only pods (FirebaseAI, FirebaseFunctions, FirebaseMLModelDownloader) that Kotlin cannot use directly — add them as `products` entries without `importedModules`:
+**Solution:** Migrate **all** Firebase pods to SPM at once. This includes Swift-only pods (FirebaseAI, FirebaseFunctions, FirebaseMLModelDownloader) that Kotlin cannot use directly — add them as `products` entries without `importedClangModules`:
 
 ```kotlin
 products = listOf(
@@ -418,7 +418,7 @@ products = listOf(
     product("FirebaseAnalytics"),
     product("FirebaseAuth"),
     // ...
-    // Swift-only pods (no importedModules needed):
+    // Swift-only pods (no importedClangModules needed):
     product("FirebaseAI"),
     product("FirebaseFunctions"),
 ),

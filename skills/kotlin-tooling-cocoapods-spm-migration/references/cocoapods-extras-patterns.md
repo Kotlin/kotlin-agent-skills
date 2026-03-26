@@ -40,8 +40,8 @@ Patterns to look for in `build.gradle.kts` files beyond the standard `cocoapods 
 
 ### Requires analysis — consult the user if unsure
 
-- `pod("...", extraOpts = ...)` — extra options may indicate special compilation flags needed. Check if the underlying library needs equivalent flags in `swiftPMDependencies` (e.g., `importedModules`, platform constraints)
-- `pod("...", moduleName = ...)` — custom module name may indicate the Clang module name differs from the pod name. This likely maps to an `importedModules` entry in the SPM package declaration
+- `pod("...", extraOpts = ...)` — extra options may indicate special compilation flags needed. Check if the underlying library needs equivalent flags in `swiftPMDependencies` (e.g., `importedClangModules`, platform constraints)
+- `pod("...", moduleName = ...)` — custom module name may indicate the Clang module name differs from the pod name. This likely maps to an `importedClangModules` entry in the SPM package declaration
 - Custom cinterop `defFile` configurations for pod headers — these may need to be adapted or may no longer be needed if the SwiftPM import handles the headers automatically. Present findings to the user before removing
 - Compiler or linker flags added specifically for CocoaPods interop (e.g., `-framework Pod`, custom `cinterops {}` blocks) — analyze whether the SPM integration handles this automatically. If unclear, present the flags to the user and ask whether they are still needed
 - Any custom task wiring or build logic that references CocoaPods outputs — explain what the task does and ask the user whether equivalent functionality is needed

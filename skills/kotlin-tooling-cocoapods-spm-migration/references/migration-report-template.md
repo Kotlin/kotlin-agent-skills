@@ -60,7 +60,7 @@ for non-trivial changes.>
 
 <Show the complete `swiftPMDependencies {}` block added.
 Document decisions: why `discoverModulesImplicitly = false`,
-which `importedModules` were chosen and why, framework search
+which `importedClangModules` were chosen and why, framework search
 paths added, static/dynamic choice, etc.>
 
 ### Phase 4: Import Transformations
@@ -106,7 +106,7 @@ build command or note that verification was deferred to the user.>
 ## Non-Trivial Decisions
 
 <Document decisions that required judgment, not just following the guide:
-- Why a specific `importedModules` list was chosen
+- Why a specific `importedClangModules` list was chosen
 - Why `isStatic` was changed (or kept)
 - Why certain `cocoapods.*` imports were preserved
 - Framework search paths added and how the product list was determined

@@ -157,9 +157,9 @@ Available platforms:
 
 By default, `discoverModulesImplicitly = true`. SwiftPM import automatically discovers and imports all accessible Clang modules.
 
-**IMPORTANT:** When `discoverModulesImplicitly = true`, the `importedModules` parameter is ignored. Only set `importedModules` when `discoverModulesImplicitly = false`.
+**IMPORTANT:** When `discoverModulesImplicitly = true`, the `importedClangModules` parameter is ignored. Only set `importedClangModules` when `discoverModulesImplicitly = false`.
 
-**IMPORTANT for Firebase:** Set `discoverModulesImplicitly = false` when using Firebase. Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop generation. Disable implicit discovery and explicitly list only the Firebase modules you need in `importedModules`.
+**IMPORTANT for Firebase:** Set `discoverModulesImplicitly = false` when using Firebase. Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop generation. Disable implicit discovery and explicitly list only the Firebase modules you need in `importedClangModules`.
 
 ### Explicit Module Import
 
@@ -176,7 +176,7 @@ swiftPMDependencies {
             product("FirebaseAnalytics"),
             product("FirebaseFirestore")
         ),
-        importedModules = listOf(
+        importedClangModules = listOf(
             "FirebaseAnalytics",
             "FirebaseCore",
             "FirebaseFirestoreInternal"  // Note: different from product name
@@ -185,9 +185,9 @@ swiftPMDependencies {
 }
 ```
 
-### When to Use importedModules
+### When to Use importedClangModules
 
-| Scenario | Use importedModules? |
+| Scenario | Use importedClangModules? |
 |----------|---------------------|
 | Product name = module name | No (auto-discovery works) |
 | Product name != module name | Yes |

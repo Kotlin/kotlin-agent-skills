@@ -13,7 +13,7 @@ All Firebase products come from a single repository: `https://github.com/firebas
 - **Platform requirements**: iOS 15+, macOS 10.15+, tvOS 15+, watchOS 7+
 - **Xcode**: 16.2+
 
-> **WARNING: Do not mix Firebase across CocoaPods and SPM.** All Firebase products share a single repository and common transitive dependencies (gRPC, abseil, leveldb, BoringSSL, nanopb, etc.). If some Firebase pods remain in CocoaPods while others are added via SPM, the shared transitive dependencies get linked twice with conflicting symbols, causing **dyld crashes at runtime** (e.g., `Symbol not found: _OBJC_CLASS_$_FIRFirestore`). When migrating Firebase, move **all** Firebase pods to SPM at once — including Swift-only pods (FirebaseAI, FirebaseFunctions, FirebaseMLModelDownloader) that Kotlin cannot use directly. Add Swift-only pods as `products` entries without `importedModules`. After adding new products, re-run `integrateLinkagePackage` to regenerate the linkage Swift package.
+> **WARNING: Do not mix Firebase across CocoaPods and SPM.** All Firebase products share a single repository and common transitive dependencies (gRPC, abseil, leveldb, BoringSSL, nanopb, etc.). If some Firebase pods remain in CocoaPods while others are added via SPM, the shared transitive dependencies get linked twice with conflicting symbols, causing **dyld crashes at runtime** (e.g., `Symbol not found: _OBJC_CLASS_$_FIRFirestore`). When migrating Firebase, move **all** Firebase pods to SPM at once — including Swift-only pods (FirebaseAI, FirebaseFunctions, FirebaseMLModelDownloader) that Kotlin cannot use directly. Add Swift-only pods as `products` entries without `importedClangModules`. After adding new products, re-run `integrateLinkagePackage` to regenerate the linkage Swift package.
 
 ### Firebase SPM Products Reference
 
@@ -23,20 +23,20 @@ All Firebase products come from a single repository: `https://github.com/firebas
 | FirebaseAuth | FirebaseAuth | All (partial on macOS/tvOS/watchOS) | ObjC classes: `FIRAuth`, `FIRUser` |
 | FirebaseCore | FirebaseCore | All | ObjC class: `FIRApp` |
 | FirebaseCrashlytics | FirebaseCrashlytics | All | ObjC class: `FIRCrashlytics` |
-| FirebaseDatabase | FirebaseDatabase | All | **importedModules: `FirebaseDatabaseInternal`** — ObjC classes: `FIRDatabase`, `FIRDatabaseReference` |
+| FirebaseDatabase | FirebaseDatabase | All | **importedClangModules: `FirebaseDatabaseInternal`** — ObjC classes: `FIRDatabase`, `FIRDatabaseReference` |
 | FirebaseFirestore | FirebaseFirestore | All | **Special case** — see below |
 | FirebaseFunctions | FirebaseFunctions | All | ObjC class: `FIRFunctions` |
 | FirebaseMessaging | FirebaseMessaging | All | ObjC classes: `FIRMessaging` |
-| FirebaseRemoteConfig | FirebaseRemoteConfig | All | **importedModules: `FirebaseRemoteConfigInternal`** — ObjC class: `FIRRemoteConfig` |
+| FirebaseRemoteConfig | FirebaseRemoteConfig | All | **importedClangModules: `FirebaseRemoteConfigInternal`** — ObjC class: `FIRRemoteConfig` |
 | FirebaseStorage | FirebaseStorage | All | ObjC class: `FIRStorage` |
 | FirebaseAppCheck | FirebaseAppCheck | All (watchOS 9+) | ObjC class: `FIRAppCheck` |
 | FirebasePerformance | FirebasePerformance | iOS/tvOS only | ObjC class: `FIRPerformance` |
-| FirebaseInAppMessaging | FirebaseInAppMessaging-Beta | iOS/tvOS only | `-Beta` suffix in SPM, **importedModules: `FirebaseInAppMessagingInternal`** |
+| FirebaseInAppMessaging | FirebaseInAppMessaging-Beta | iOS/tvOS only | `-Beta` suffix in SPM, **importedClangModules: `FirebaseInAppMessagingInternal`** |
 | FirebaseAppDistribution | FirebaseAppDistribution-Beta | iOS only | Note `-Beta` suffix in SPM |
 | FirebaseInstallations | FirebaseInstallations | All | ObjC class: `FIRInstallations` |
-| FirebaseABTesting | *(no SPM product)* | All | **Module-only**: pulled transitively by RemoteConfig. List in `importedModules` only |
-| FirebaseAILogic | FirebaseAI | All | **Renamed in SPM**. Swift-only — no `importedModules` entry needed |
-| FirebaseMLModelDownloader | FirebaseMLModelDownloader | All | Swift-only — no `importedModules` entry needed |
+| FirebaseABTesting | *(no SPM product)* | All | **Module-only**: pulled transitively by RemoteConfig. List in `importedClangModules` only |
+| FirebaseAILogic | FirebaseAI | All | **Renamed in SPM**. Swift-only — no `importedClangModules` entry needed |
+| FirebaseMLModelDownloader | FirebaseMLModelDownloader | All | Swift-only — no `importedClangModules` entry needed |
 
 ### FirebaseAnalytics
 
@@ -80,18 +80,18 @@ import swiftPMImport.<group>.<module>.FIRUser
 
 ### FirebaseDatabase
 
-Database's Clang module name differs from its SPM product name. You **must** specify `importedModules`.
+Database's Clang module name differs from its SPM product name. You **must** specify `importedClangModules`.
 
 ```kotlin
 // CocoaPods
 pod("FirebaseDatabase") { version = "12.5.0" }
 
-// SwiftPM - Note the importedModules parameter
+// SwiftPM - Note the importedClangModules parameter
 swiftPackage(
     url = url("https://github.com/firebase/firebase-ios-sdk.git"),
     version = from("12.6.0"),
     products = listOf(product("FirebaseDatabase")),
-    importedModules = listOf("FirebaseDatabaseInternal"),
+    importedClangModules = listOf("FirebaseDatabaseInternal"),
 )
 ```
 
@@ -103,18 +103,18 @@ import swiftPMImport.<group>.<module>.FIRDatabaseReference
 
 ### FirebaseFirestore (Special Case)
 
-Firestore's Clang module name differs from its SPM product name. You **must** specify `importedModules`.
+Firestore's Clang module name differs from its SPM product name. You **must** specify `importedClangModules`.
 
 ```kotlin
 // CocoaPods
 pod("FirebaseFirestore") { version = "12.5.0" }
 
-// SwiftPM - Note the importedModules parameter
+// SwiftPM - Note the importedClangModules parameter
 swiftPackage(
     url = url("https://github.com/firebase/firebase-ios-sdk.git"),
     version = from("12.6.0"),
     products = listOf(product("FirebaseFirestore")),
-    importedModules = listOf("FirebaseFirestoreInternal"),
+    importedClangModules = listOf("FirebaseFirestoreInternal"),
 )
 ```
 
@@ -124,7 +124,7 @@ import swiftPMImport.<group>.<module>.FIRFirestore
 import swiftPMImport.<group>.<module>.FIRDocumentReference
 ```
 
-**Why is this needed?** Firestore distributes as a binary xcframework. The internal Clang module exposed to Objective-C is named `FirebaseFirestoreInternal`, not `FirebaseFirestore`. Without `importedModules`, the KMP compiler cannot discover the Objective-C headers.
+**Why is this needed?** Firestore distributes as a binary xcframework. The internal Clang module exposed to Objective-C is named `FirebaseFirestoreInternal`, not `FirebaseFirestore`. Without `importedClangModules`, the KMP compiler cannot discover the Objective-C headers.
 
 ### FirebaseCrashlytics
 
@@ -176,11 +176,11 @@ swiftPMDependencies {
             product("FirebaseCrashlytics"),
             product("FirebaseMessaging"),
             product("FirebaseRemoteConfig"),
-            // Swift-only pods (products only, no importedModules):
+            // Swift-only pods (products only, no importedClangModules):
             product("FirebaseAI"),
             product("FirebaseFunctions"),
         ),
-        importedModules = listOf(
+        importedClangModules = listOf(
             "FirebaseAnalytics",
             "FirebaseAuth",
             "FirebaseCore",
@@ -195,11 +195,11 @@ swiftPMDependencies {
 }
 ```
 
-### Firebase importedModules Reference
+### Firebase importedClangModules Reference
 
 Several Firebase products expose ObjC headers through Clang modules whose names differ from the SPM product name:
 
-| SPM Product | Clang Module (importedModules) | Notes |
+| SPM Product | Clang Module (importedClangModules) | Notes |
 |---|---|---|
 | FirebaseAnalytics | FirebaseAnalytics | Same name |
 | FirebaseAuth | FirebaseAuth | Same name |
@@ -220,7 +220,7 @@ Several Firebase products expose ObjC headers through Clang modules whose names 
 | FirebaseFunctions | *(none)* | Swift-only, no cinterop |
 | FirebaseMLModelDownloader | *(none)* | Swift-only, no cinterop |
 
-**Note:** When `discoverModulesImplicitly = false` (recommended for Firebase), you must list every Clang module you import in `importedModules`. When `true` (default), `importedModules` is ignored — but this will fail for Firebase due to C++ transitive dependencies.
+**Note:** When `discoverModulesImplicitly = false` (recommended for Firebase), you must list every Clang module you import in `importedClangModules`. When `true` (default), `importedClangModules` is ignored — but this will fail for Firebase due to C++ transitive dependencies.
 
 ### Firebase Initialization
 
@@ -339,16 +339,16 @@ import swiftPMImport.<group>.<module>.LoremIpsum
 | FirebaseAuth | FirebaseAuth | firebase/firebase-ios-sdk.git | from() | All | |
 | FirebaseCore | FirebaseCore | firebase/firebase-ios-sdk.git | from() | All | |
 | FirebaseCrashlytics | FirebaseCrashlytics | firebase/firebase-ios-sdk.git | from() | All | Needs dSYM upload script |
-| FirebaseDatabase | FirebaseDatabase | firebase/firebase-ios-sdk.git | from() | All | importedModules: FirebaseDatabaseInternal |
-| FirebaseFirestore | FirebaseFirestore | firebase/firebase-ios-sdk.git | from() | All | importedModules: FirebaseFirestoreInternal |
+| FirebaseDatabase | FirebaseDatabase | firebase/firebase-ios-sdk.git | from() | All | importedClangModules: FirebaseDatabaseInternal |
+| FirebaseFirestore | FirebaseFirestore | firebase/firebase-ios-sdk.git | from() | All | importedClangModules: FirebaseFirestoreInternal |
 | FirebaseFunctions | FirebaseFunctions | firebase/firebase-ios-sdk.git | from() | All | |
 | FirebaseMessaging | FirebaseMessaging | firebase/firebase-ios-sdk.git | from() | All | |
-| FirebaseRemoteConfig | FirebaseRemoteConfig | firebase/firebase-ios-sdk.git | from() | All | importedModules: FirebaseRemoteConfigInternal |
+| FirebaseRemoteConfig | FirebaseRemoteConfig | firebase/firebase-ios-sdk.git | from() | All | importedClangModules: FirebaseRemoteConfigInternal |
 | FirebaseStorage | FirebaseStorage | firebase/firebase-ios-sdk.git | from() | All | |
 | FirebasePerformance | FirebasePerformance | firebase/firebase-ios-sdk.git | from() | iOS/tvOS | |
-| FirebaseInAppMessaging | FirebaseInAppMessaging-Beta | firebase/firebase-ios-sdk.git | from() | iOS/tvOS | `-Beta` suffix, importedModules: FirebaseInAppMessagingInternal |
+| FirebaseInAppMessaging | FirebaseInAppMessaging-Beta | firebase/firebase-ios-sdk.git | from() | iOS/tvOS | `-Beta` suffix, importedClangModules: FirebaseInAppMessagingInternal |
 | FirebaseAppDistribution | FirebaseAppDistribution-Beta | firebase/firebase-ios-sdk.git | from() | iOS only | `-Beta` suffix |
-| FirebaseABTesting | *(none)* | firebase/firebase-ios-sdk.git | — | All | Module-only, importedModules only |
+| FirebaseABTesting | *(none)* | firebase/firebase-ios-sdk.git | — | All | Module-only, importedClangModules only |
 | FirebaseAILogic | FirebaseAI | firebase/firebase-ios-sdk.git | from() | All | Renamed, Swift-only |
 | GoogleMaps | GoogleMaps | googlemaps/ios-maps-sdk.git | exact() | iOS 16+ only | Requires platform constraint |
 | GoogleSignIn | GoogleSignIn | google/GoogleSignIn-iOS.git | from() | iOS 12+, macOS 10.15+ | |
@@ -371,7 +371,7 @@ Maven: `io.github.mirzemehdi:kmpnotifier`
 **Impact on migration:**
 - When `swiftPMDependencies` generates cinterop bindings, it detects that `FirebaseMessaging` bindings already exist in KMPNotifier's klib and **skips generating new bindings** for that Clang module
 - `import cocoapods.FirebaseMessaging.FIRMessaging` must remain unchanged — do NOT replace with `swiftPMImport.*`
-- `FirebaseMessaging` should still be listed in `products` and `importedModules` for SPM linking, even though cinterop bindings won't be generated for it
+- `FirebaseMessaging` should still be listed in `products` and `importedClangModules` for SPM linking, even though cinterop bindings won't be generated for it
 
 **Verifying bundled klib contents:** Use `klib dump-metadata-signatures` to inspect what a library's klib provides ([docs](https://kotlinlang.org/docs/native-libraries.html#using-kotlin-native-compiler)):
 
@@ -469,5 +469,5 @@ Indicators that a library may bundle cinterop klibs:
 
 SPM versions may differ from CocoaPods versions. Always:
 1. Check the GitHub releases page for SPM-compatible versions
-2. Use `exact()` if the library requires exact version matching
+2. **Preserve version constraint semantics from the `cocoapods {}` block.** CocoaPods `version = "X.Y.Z"` (without `~>`) is an exact pin — use `exact("X.Y.Z")` in SPM, not `from()`. Using `from()` for an exact version can resolve to a newer version that breaks cinterop APIs if symbols were removed or renamed. Only use `from()` when the CocoaPods spec used optimistic versioning (`~>`).
 3. Test thoroughly after migration
