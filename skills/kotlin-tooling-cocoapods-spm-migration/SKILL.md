@@ -124,7 +124,9 @@ To inspect klib contents and verify bundled bindings, see [troubleshooting.md](r
 1. **CocoaPods configuration** - Search for `cocoapods` in `build.gradle.kts` files
 2. **Pod dependencies** - Extract pod names, versions from `cocoapods {}` blocks
 3. **Framework configuration** - Record `baseName`, `isStatic`, deployment target from `cocoapods.framework {}`
-4. **linkOnly pods** - Record pods declared with `linkOnly = true`. These pods provide native linking only — cinterop bindings come from a KMP wrapper library (e.g., `dev.gitlive:firebase-*`). See [common-pods-mapping.md](references/common-pods-mapping.md) for implications.
+4. **linkOnly pods** - Record pods declared with `linkOnly = true`. These have two common patterns:
+   - **KMP wrapper libraries** (e.g., `dev.gitlive:firebase-*`): the wrapper provides Kotlin APIs, and the pod is only linked. See [common-pods-mapping.md](references/common-pods-mapping.md) for implications.
+   - **Multi-module projects**: the consuming module declares `linkOnly = true` because a child module already provides cinterop bindings for that pod. In SwiftPM, the `swiftPackage()` declaration should go in the **child module** that uses the pod directly, not in the consuming module. The consuming module only needs an empty `swiftPMDependencies {}` block (or one without those packages).
 5. **Kotlin imports** - Find all `import cocoapods.*` statements. Cross-reference with step 1.3 to identify which imports come from bundled klibs (and must be preserved) vs. which come from direct pod cinterop (and must be transformed).
 6. **Map pods to SPM** - See [common-pods-mapping.md](references/common-pods-mapping.md)
 7. **Locate iOS project directory** - Find the directory containing `Podfile` and `.xcworkspace`:
@@ -234,7 +236,7 @@ kotlin {
     iosX64()
 
     swiftPMDependencies {
-        iosMinimumDeploymentTarget.set("16.0")
+        iosMinimumDeploymentTarget = "16.0"
 
         // If using KMP IntelliJ plugin, specify the .xcodeproj path:
         // xcodeProjectPathForKmpIJPlugin.set(

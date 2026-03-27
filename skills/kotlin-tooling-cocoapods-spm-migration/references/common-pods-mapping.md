@@ -254,9 +254,7 @@ pod("GoogleMaps") { version = "10.10.0" }
 swiftPackage(
     url = url("https://github.com/googlemaps/ios-maps-sdk.git"),
     version = exact("10.10.0"),  // Must use exact(), not from()
-    products = listOf(
-        product("GoogleMaps", platforms = setOf(iOS()))  // iOS-only platform constraint required
-    ),
+    products = listOf(product("GoogleMaps")),
 )
 ```
 
@@ -351,7 +349,7 @@ import swiftPMImport.<group>.<module>.LoremIpsum
 | FirebaseAppDistribution | FirebaseAppDistribution-Beta | firebase/firebase-ios-sdk.git | from() | iOS only | `-Beta` suffix |
 | FirebaseABTesting | *(none)* | firebase/firebase-ios-sdk.git | — | All | Module-only, importedClangModules only |
 | FirebaseAILogic | FirebaseAI | firebase/firebase-ios-sdk.git | from() | All | Renamed, Swift-only |
-| GoogleMaps | GoogleMaps | googlemaps/ios-maps-sdk.git | exact() | iOS 16+ only | Requires platform constraint |
+| GoogleMaps | GoogleMaps | googlemaps/ios-maps-sdk.git | exact() | iOS 16+ only | |
 | GoogleSignIn | GoogleSignIn | google/GoogleSignIn-iOS.git | from() | iOS 12+, macOS 10.15+ | |
 | GoogleSignInSwiftSupport | GoogleSignInSwift | google/GoogleSignIn-iOS.git | from() | iOS 12+, macOS 10.15+ | SwiftUI support |
 | LoremIpsum | LoremIpsum | lukaskubanek/LoremIpsum.git | from() | All | |

@@ -11,10 +11,10 @@ kotlin {
 
     swiftPMDependencies {
         // Deployment versions
-        iosMinimumDeploymentTarget.set("16.0")
-        macosMinimumDeploymentTarget.set("13.0")
-        tvosMinimumDeploymentTarget.set("16.0")
-        watchosMinimumDeploymentTarget.set("9.0")
+        iosMinimumDeploymentTarget = "16.0"
+        macosMinimumDeploymentTarget = "13.0"
+        tvosMinimumDeploymentTarget = "16.0"
+        watchosMinimumDeploymentTarget = "9.0"
 
         // IDE integration
         xcodeProjectPathForKmpIJPlugin.set(
@@ -202,10 +202,10 @@ Set minimum deployment targets for each platform:
 
 ```kotlin
 swiftPMDependencies {
-    iosMinimumDeploymentTarget.set("16.0")
-    macosMinimumDeploymentTarget.set("13.0")
-    tvosMinimumDeploymentTarget.set("16.0")
-    watchosMinimumDeploymentTarget.set("9.0")
+    iosMinimumDeploymentTarget = "16.0"
+    macosMinimumDeploymentTarget = "13.0"
+    tvosMinimumDeploymentTarget = "16.0"
+    watchosMinimumDeploymentTarget = "9.0"
 }
 ```
 
@@ -257,7 +257,7 @@ kotlin {
     iosSimulatorArm64()
 
     swiftPMDependencies {
-        iosMinimumDeploymentTarget.set("16.0")
+        iosMinimumDeploymentTarget = "16.0"
 
         xcodeProjectPathForKmpIJPlugin.set(
             layout.projectDirectory.file("../iosApp/iosApp.xcodeproj")
@@ -277,10 +277,8 @@ kotlin {
         // Google Maps (iOS only, exact version)
         swiftPackage(
             url = url("https://github.com/googlemaps/ios-maps-sdk.git"),
-            version = exact("10.6.0"),
-            products = listOf(
-                product("GoogleMaps", platforms = setOf(iOS()))
-            ),
+            version = exact("10.3.0"),
+            products = listOf(product("GoogleMaps")),
         )
 
         // Local package
