@@ -126,7 +126,7 @@ To inspect klib contents and verify bundled bindings, see [troubleshooting.md](r
 3. **Framework configuration** - Record `baseName`, `isStatic`, deployment target from `cocoapods.framework {}`
 4. **linkOnly pods** - Record pods declared with `linkOnly = true`. These have two common patterns:
    - **KMP wrapper libraries** (e.g., `dev.gitlive:firebase-*`): the wrapper provides Kotlin APIs, and the pod is only linked. See [common-pods-mapping.md](references/common-pods-mapping.md) for implications.
-   - **Multi-module projects**: the consuming module declares `linkOnly = true` because a child module already provides cinterop bindings for that pod. In SwiftPM, the `swiftPackage()` declaration should go in the **child module** that uses the pod directly, not in the consuming module. The consuming module only needs an empty `swiftPMDependencies {}` block (or one without those packages).
+   - **Multi-module projects**: the consuming module declares `linkOnly = true` because a child module already provides cinterop bindings for that pod. In SwiftPM, the `swiftPackage()` declaration should go **only** in the child module that uses the pod directly. The consuming module must NOT redeclare the same packages — it only needs a `swiftPMDependencies {}` block without those packages (or an empty one if all pods were `linkOnly`).
 5. **Kotlin imports** - Find all `import cocoapods.*` statements. Cross-reference with step 1.3 to identify which imports come from bundled klibs (and must be preserved) vs. which come from direct pod cinterop (and must be transformed).
 6. **Map pods to SPM** - See [common-pods-mapping.md](references/common-pods-mapping.md)
 7. **Locate iOS project directory** - Find the directory containing `Podfile` and `.xcworkspace`:
@@ -216,11 +216,17 @@ For each pod dependency, add the equivalent SwiftPM package declaration. Use [co
 
 | CocoaPods version spec | SPM equivalent | Example |
 |------------------------|---------------|---------|
-| `version = "1.2.3"` (exact) | `exact("1.2.3")` | `pod("GoogleMaps") { version = "10.3.0" }` → `exact("10.3.0")` |
-| `version = "~> 1.2"` (optimistic) | `from("1.2.0")` | `pod("FirebaseAuth") { version = "~> 12.5" }` → `from("12.5.0")` |
-| No version specified | `exact()` with latest, or ask user | Ask the user which version to pin |
+| `version = "1.2.3"` (exact) | `version = "1.2.3"` (simple) or `exact("1.2.3")` (typed) | `pod("GoogleMaps") { version = "10.3.0" }` → `version = "10.3.0"` |
+| `version = "~> 1.2"` (optimistic) | `version = "1.2.0"` (simple) or `from("1.2.0")` (typed) | `pod("FirebaseAuth") { version = "~> 12.5" }` → `version = "12.5.0"` |
+| No version specified | Ask user which version to pin | Ask the user which version to use |
 
-**Key concepts:** `products` = SPM product names (controls linking). `importedClangModules` = Clang module names for cinterop bindings (only when `discoverModulesImplicitly = false`). `discoverModulesImplicitly` defaults to `true` (bindings for all Clang modules); set `false` when transitive C/C++ modules fail cinterop (Firebase, gRPC), then list needed modules explicitly.
+**Two API forms:** The DSL has a simple string API and a typed API. **Use the simple string API** for most packages:
+```kotlin
+swiftPackage(url = "https://github.com/owner/repo.git", version = "1.0.0", products = listOf("ProductName"))
+```
+The simple API auto-defaults `importedClangModules` to the `products` list. Use the typed API (with `url()`, `exact()`, `product()` wrappers) only when you need exact version pinning, platform constraints, or explicit Clang module control. See [dsl-reference.md](references/dsl-reference.md) for the typed API.
+
+**Key concepts:** `products` = SPM product names (controls linking). `importedClangModules` = Clang module names for cinterop bindings (only when `discoverClangModulesImplicitly = false`). `discoverClangModulesImplicitly` defaults to `true` (bindings for all Clang modules); set `false` when transitive C/C++ modules fail cinterop (Firebase, gRPC), then list needed modules explicitly.
 
 **Important:** SPM product names and Clang module names don't always match. Always consult [common-pods-mapping.md](references/common-pods-mapping.md) for correct values.
 
@@ -244,9 +250,9 @@ kotlin {
         // )
 
         swiftPackage(
-            url = url("https://github.com/owner/repo.git"),
-            version = from("1.0.0"),
-            products = listOf(product("ProductName")),
+            url = "https://github.com/owner/repo.git",
+            version = "1.0.0",
+            products = listOf("ProductName"),
         )
     }
 

@@ -22,7 +22,7 @@ kotlin {
         )
 
         // Module discovery (default: true)
-        discoverModulesImplicitly = true
+        discoverClangModulesImplicitly = true
 
         // Package declarations
         swiftPackage(...)
@@ -35,16 +35,33 @@ kotlin {
 
 ## Package Declaration
 
-### Remote Package (Git URL)
+The DSL has two API forms. **Use the simple string API** for most packages. Use the typed API only when you need `exact()`, `branch()`, `revision()`, or platform constraints.
+
+### Simple API (Preferred)
+
+Plain strings for URL, version, and products. The `version` parameter maps to a **minimum version** (`from()`) internally. The `importedClangModules` defaults to the `products` list automatically.
+
+```kotlin
+swiftPackage(
+    url = "https://github.com/owner/repo.git",
+    version = "1.0.0",   // Equivalent to from("1.0.0") — minimum version
+    products = listOf("ProductName", "AnotherProduct"),
+)
+```
+
+### Typed API (Advanced)
+
+Use when you need exact version pinning, branch tracking, platform constraints, or explicit Clang module control:
 
 ```kotlin
 swiftPackage(
     url = url("https://github.com/owner/repo.git"),
-    version = from("1.0.0"),
+    version = exact("1.0.0"),
     products = listOf(
         product("ProductName"),
-        product("AnotherProduct")
+        product("PlatformSpecific", platforms = setOf(iOS()))
     ),
+    importedClangModules = listOf("CustomClangModuleName"),
 )
 ```
 
@@ -55,6 +72,7 @@ swiftPackage(
     repository = id("scope.package-name"),
     version = from("1.0.0"),
     products = listOf(product("ProductName")),
+    packageName = "package-name",
 )
 ```
 
@@ -90,52 +108,32 @@ fun useLocalPackage() {
 
 ## Version Specification
 
-| Function | Description | Use Case |
-|----------|-------------|----------|
-| `from("1.0")` | Minimum version (like Gradle "require") | Most packages |
-| `exact("1.0")` | Exact version (like Gradle "strict") | GoogleMaps, strict dependencies |
-| `branch("name")` | Git branch | Development, testing |
-| `revision("hash")` | Git commit hash | Pinning specific commits |
+| Syntax | Description | Use Case |
+|--------|-------------|----------|
+| `version = "1.0.0"` (simple API) | Minimum version — equivalent to `from("1.0.0")` | Most packages |
+| `version = exact("1.0")` | Exact version pin | Strict dependencies, migration |
+| `version = from("1.0")` | Minimum version (explicit) | Same as simple string |
+| `version = branch("name")` | Git branch | Development, testing |
+| `version = revision("hash")` | Git commit hash | Pinning specific commits |
+| `version = range("1.0", "2.0")` | Version range | Constraining upper bound |
 
-### Examples
-
-```kotlin
-// Minimum version - allows compatible updates
-version = from("12.5.0")
-
-// Exact version - no updates
-version = exact("10.3.0")
-
-// Branch tracking
-version = branch("main")
-
-// Specific commit
-version = revision("abc123def456")
-```
+**Important for migration:** The simple string `version = "X.Y.Z"` resolves to a minimum version (`from()`), which may pull a newer version than what was in CocoaPods. For exact version preservation during migration, use the typed API: `version = exact("X.Y.Z")`.
 
 ---
 
 ## Product Configuration
 
-### Basic Product
+### Simple API
 
 ```kotlin
-products = listOf(product("FirebaseAnalytics"))
+products = listOf("FirebaseAnalytics", "FirebaseAuth")
 ```
 
-### Multiple Products from Same Package
+With the simple API, `importedClangModules` defaults to the same list as `products`. This works when product names match Clang module names.
 
-```kotlin
-products = listOf(
-    product("FirebaseAnalytics"),
-    product("FirebaseAuth"),
-    product("FirebaseFirestore")
-)
-```
+### Typed API — Platform Constraints
 
-### Platform-Constrained Product
-
-For packages that only support certain platforms:
+For packages that only support certain platforms, use the typed `product()` function:
 
 ```kotlin
 products = listOf(
@@ -143,11 +141,15 @@ products = listOf(
 )
 ```
 
-Available platforms:
-- `iOS()`
-- `macOS()`
-- `tvOS()`
-- `watchOS()`
+Available platforms: `iOS()`, `macOS()`, `tvOS()`, `watchOS()`
+
+### Typed API — Per-Product Clang Module Override
+
+```kotlin
+products = listOf(
+    product("FirebaseDatabase", importedClangModules = setOf("FirebaseDatabaseInternal"))
+)
+```
 
 ---
 
@@ -155,19 +157,19 @@ Available platforms:
 
 ### Automatic Discovery (Default)
 
-By default, `discoverModulesImplicitly = true`. SwiftPM import automatically discovers and imports all accessible Clang modules.
+By default, `discoverClangModulesImplicitly = true`. SwiftPM import automatically discovers and imports all accessible Clang modules.
 
-**IMPORTANT:** When `discoverModulesImplicitly = true`, the `importedClangModules` parameter is ignored. Only set `importedClangModules` when `discoverModulesImplicitly = false`.
+**IMPORTANT:** When `discoverClangModulesImplicitly = true`, the `importedClangModules` parameter is ignored. Only set `importedClangModules` when `discoverClangModulesImplicitly = false`.
 
-**IMPORTANT for Firebase:** Set `discoverModulesImplicitly = false` when using Firebase. Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop generation. Disable implicit discovery and explicitly list only the Firebase modules you need in `importedClangModules`.
+**IMPORTANT for Firebase:** Set `discoverClangModulesImplicitly = false` when using Firebase. Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop generation. Disable implicit discovery and explicitly list only the Firebase modules you need in `importedClangModules`.
 
 ### Explicit Module Import
 
-When automatic discovery is disabled and the Clang module name differs from the product name:
+When automatic discovery is disabled and the Clang module name differs from the product name, use the typed API:
 
 ```kotlin
 swiftPMDependencies {
-    discoverModulesImplicitly = false  // Disable auto-discovery
+    discoverClangModulesImplicitly = false  // Disable auto-discovery
 
     swiftPackage(
         url = url("https://github.com/firebase/firebase-ios-sdk.git"),
@@ -189,10 +191,10 @@ swiftPMDependencies {
 
 | Scenario | Use importedClangModules? |
 |----------|---------------------|
-| Product name = module name | No (auto-discovery works) |
-| Product name != module name | Yes |
-| Multiple modules per product | Yes |
-| Using discoverModulesImplicitly = false | Yes |
+| Simple API, product name = Clang module name | No (auto-defaulted from products) |
+| Product name != Clang module name | Yes (typed API) |
+| Multiple modules per product | Yes (typed API) |
+| Using discoverClangModulesImplicitly = false | Yes (typed API) |
 
 ---
 
@@ -243,8 +245,6 @@ This enables the IDE to properly resolve SwiftPM dependencies and provide code c
 ## Complete Example
 
 ```kotlin
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
 }
@@ -256,6 +256,14 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    // Framework configuration (moved from cocoapods block)
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "SharedModule"
+            isStatic = true
+        }
+    }
+
     swiftPMDependencies {
         iosMinimumDeploymentTarget = "16.0"
 
@@ -263,22 +271,18 @@ kotlin {
             layout.projectDirectory.file("../iosApp/iosApp.xcodeproj")
         )
 
-        // Firebase packages
+        // Simple API — most packages
         swiftPackage(
-            url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-            version = from("12.6.0"),
-            products = listOf(
-                product("FirebaseAnalytics"),
-                product("FirebaseAuth"),
-                product("FirebaseFirestore")
-            ),
+            url = "https://github.com/lukaskubanek/LoremIpsum.git",
+            version = "2.0.1",
+            products = listOf("LoremIpsum"),
         )
 
-        // Google Maps (iOS only, exact version)
+        // Simple API — Google Maps
         swiftPackage(
-            url = url("https://github.com/googlemaps/ios-maps-sdk.git"),
-            version = exact("10.3.0"),
-            products = listOf(product("GoogleMaps")),
+            url = "https://github.com/googlemaps/ios-maps-sdk.git",
+            version = "10.3.0",
+            products = listOf("GoogleMaps"),
         )
 
         // Local package
@@ -288,21 +292,8 @@ kotlin {
         )
     }
 
-    // Framework configuration (moved from cocoapods block)
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64(),
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "SharedModule"
-            isStatic = true
-        }
-    }
-
-    sourceSets.configureEach {
-        languageSettings {
-            optIn("kotlinx.cinterop.ExperimentalForeignApi")
-        }
+    compilerOptions {
+        optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
     }
 }
 ```
@@ -319,16 +310,16 @@ You can optionally declare transitive dependencies explicitly to pin specific ve
 swiftPMDependencies {
     // Main dependency
     swiftPackage(
-        url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-        version = from("12.5.0"),
-        products = listOf(product("FirebaseAnalytics")),
+        url = "https://github.com/firebase/firebase-ios-sdk.git",
+        version = "12.5.0",
+        products = listOf("FirebaseAnalytics"),
     )
 
-    // Transitive dependency with explicit version
+    // Transitive dependency with explicit version pin
     swiftPackage(
         url = url("https://github.com/apple/swift-protobuf.git"),
         version = exact("1.32.0"),
-        products = listOf(),  // No direct import needed
+        products = listOf(product("SwiftProtobuf")),
     )
 }
 ```

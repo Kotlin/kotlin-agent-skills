@@ -306,13 +306,13 @@ With a static framework, all symbols are embedded in the `.a` archive. No `LC_LO
 
 **Symptom:** Build fails with cinterop errors on modules like `grpc`, `absl`, `leveldb`, `openssl_grpc`, or other C++ transitive dependencies of Firebase.
 
-**Cause:** `discoverModulesImplicitly = true` (the default) makes Kotlin attempt cinterop on every Clang module in the dependency graph, including C++ modules that are not compatible.
+**Cause:** `discoverClangModulesImplicitly = true` (the default) makes Kotlin attempt cinterop on every Clang module in the dependency graph, including C++ modules that are not compatible.
 
-**Solution:** Set `discoverModulesImplicitly = false` and explicitly list only the Firebase Clang modules you need:
+**Solution:** Set `discoverClangModulesImplicitly = false` and explicitly list only the Firebase Clang modules you need:
 
 ```kotlin
 swiftPMDependencies {
-    discoverModulesImplicitly = false
+    discoverClangModulesImplicitly = false
 
     swiftPackage(
         url = url("https://github.com/firebase/firebase-ios-sdk.git"),

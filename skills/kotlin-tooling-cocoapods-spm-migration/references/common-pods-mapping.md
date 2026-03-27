@@ -44,11 +44,11 @@ All Firebase products come from a single repository: `https://github.com/firebas
 // CocoaPods
 pod("FirebaseAnalytics") { version = "12.5.0" }
 
-// SwiftPM
+// SwiftPM — use same version as pod
 swiftPackage(
-    url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-    version = from("12.6.0"),
-    products = listOf(product("FirebaseAnalytics")),
+    url = "https://github.com/firebase/firebase-ios-sdk.git",
+    version = "12.5.0",
+    products = listOf("FirebaseAnalytics"),
 )
 ```
 
@@ -64,11 +64,11 @@ import swiftPMImport.<group>.<module>.FIRApp
 // CocoaPods
 pod("FirebaseAuth") { version = "12.5.0" }
 
-// SwiftPM
+// SwiftPM — use same version as pod
 swiftPackage(
-    url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-    version = from("12.6.0"),
-    products = listOf(product("FirebaseAuth")),
+    url = "https://github.com/firebase/firebase-ios-sdk.git",
+    version = "12.5.0",
+    products = listOf("FirebaseAuth"),
 )
 ```
 
@@ -80,16 +80,16 @@ import swiftPMImport.<group>.<module>.FIRUser
 
 ### FirebaseDatabase
 
-Database's Clang module name differs from its SPM product name. You **must** specify `importedClangModules`.
+Database's Clang module name differs from its SPM product name. You **must** specify `importedClangModules` (requires typed API):
 
 ```kotlin
 // CocoaPods
 pod("FirebaseDatabase") { version = "12.5.0" }
 
-// SwiftPM - Note the importedClangModules parameter
+// SwiftPM - Note the importedClangModules parameter (typed API required)
 swiftPackage(
     url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-    version = from("12.6.0"),
+    version = from("12.5.0"),
     products = listOf(product("FirebaseDatabase")),
     importedClangModules = listOf("FirebaseDatabaseInternal"),
 )
@@ -103,16 +103,16 @@ import swiftPMImport.<group>.<module>.FIRDatabaseReference
 
 ### FirebaseFirestore (Special Case)
 
-Firestore's Clang module name differs from its SPM product name. You **must** specify `importedClangModules`.
+Firestore's Clang module name differs from its SPM product name. You **must** specify `importedClangModules` (requires typed API):
 
 ```kotlin
 // CocoaPods
 pod("FirebaseFirestore") { version = "12.5.0" }
 
-// SwiftPM - Note the importedClangModules parameter
+// SwiftPM - Note the importedClangModules parameter (typed API required)
 swiftPackage(
     url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-    version = from("12.6.0"),
+    version = from("12.5.0"),
     products = listOf(product("FirebaseFirestore")),
     importedClangModules = listOf("FirebaseFirestoreInternal"),
 )
@@ -132,11 +132,11 @@ import swiftPMImport.<group>.<module>.FIRDocumentReference
 // CocoaPods
 pod("FirebaseCrashlytics") { version = "12.5.0" }
 
-// SwiftPM
+// SwiftPM — use same version as pod
 swiftPackage(
-    url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-    version = from("12.6.0"),
-    products = listOf(product("FirebaseCrashlytics")),
+    url = "https://github.com/firebase/firebase-ios-sdk.git",
+    version = "12.5.0",
+    products = listOf("FirebaseCrashlytics"),
 )
 ```
 
@@ -159,15 +159,16 @@ Also set **Debug Information Format** to `DWARF with dSYM File` for all build co
 
 ### Combined Firebase Example
 
-When using multiple Firebase products, declare them in a single package. **Set `discoverModulesImplicitly = false`** — Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop. Explicitly list only the modules you need.
+When using multiple Firebase products, declare them in a single package. **Set `discoverClangModulesImplicitly = false`** — Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop. Explicitly list only the modules you need.
 
 ```kotlin
 swiftPMDependencies {
-    discoverModulesImplicitly = false
+    discoverClangModulesImplicitly = false
 
+    // Combined Firebase requires typed API for importedClangModules control
     swiftPackage(
         url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-        version = from("12.6.0"),
+        version = from("12.5.0"),
         products = listOf(
             product("FirebaseAnalytics"),
             product("FirebaseAuth"),
@@ -220,7 +221,7 @@ Several Firebase products expose ObjC headers through Clang modules whose names 
 | FirebaseFunctions | *(none)* | Swift-only, no cinterop |
 | FirebaseMLModelDownloader | *(none)* | Swift-only, no cinterop |
 
-**Note:** When `discoverModulesImplicitly = false` (recommended for Firebase), you must list every Clang module you import in `importedClangModules`. When `true` (default), `importedClangModules` is ignored — but this will fail for Firebase due to C++ transitive dependencies.
+**Note:** When `discoverClangModulesImplicitly = false` (recommended for Firebase), you must list every Clang module you import in `importedClangModules`. When `true` (default), `importedClangModules` is ignored — but this will fail for Firebase due to C++ transitive dependencies.
 
 ### Firebase Initialization
 
@@ -252,9 +253,9 @@ pod("GoogleMaps") { version = "10.10.0" }
 
 // SwiftPM — use the exact same version as the pod
 swiftPackage(
-    url = url("https://github.com/googlemaps/ios-maps-sdk.git"),
-    version = exact("10.10.0"),  // Must use exact(), not from()
-    products = listOf(product("GoogleMaps")),
+    url = "https://github.com/googlemaps/ios-maps-sdk.git",
+    version = "10.10.0",
+    products = listOf("GoogleMaps"),
 )
 ```
 
@@ -289,11 +290,11 @@ Repository: `https://github.com/google/GoogleSignIn-iOS.git`
 // CocoaPods
 pod("GoogleSignIn") { version = "8.0.0" }
 
-// SwiftPM
+// SwiftPM — use same version as pod
 swiftPackage(
-    url = url("https://github.com/google/GoogleSignIn-iOS.git"),
-    version = from("8.0.0"),
-    products = listOf(product("GoogleSignIn")),
+    url = "https://github.com/google/GoogleSignIn-iOS.git",
+    version = "8.0.0",
+    products = listOf("GoogleSignIn"),
 )
 ```
 
@@ -315,11 +316,11 @@ Simple text generation library with direct mapping.
 // CocoaPods
 pod("LoremIpsum") { version = "2.0.1" }
 
-// SwiftPM
+// SwiftPM — use same version as pod
 swiftPackage(
-    url = url("https://github.com/lukaskubanek/LoremIpsum.git"),
-    version = from("2.0.1"),
-    products = listOf(product("LoremIpsum")),
+    url = "https://github.com/lukaskubanek/LoremIpsum.git",
+    version = "2.0.1",
+    products = listOf("LoremIpsum"),
 )
 ```
 
@@ -439,7 +440,7 @@ For pods not listed here:
 
 If you're unsure of the correct Clang module name:
 
-1. Keep `discoverModulesImplicitly = true` (default)
+1. Keep `discoverClangModulesImplicitly = true` (default)
 2. Run `./gradlew build`
 3. Check build errors for available class names
 4. Or check the library's `module.modulemap` file in its source

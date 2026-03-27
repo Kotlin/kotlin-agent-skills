@@ -59,7 +59,7 @@ for non-trivial changes.>
 ### Phase 3: swiftPMDependencies
 
 <Show the complete `swiftPMDependencies {}` block added.
-Document decisions: why `discoverModulesImplicitly = false`,
+Document decisions: why `discoverClangModulesImplicitly = false`,
 which `importedClangModules` were chosen and why, framework search
 paths added, static/dynamic choice, etc.>
 
