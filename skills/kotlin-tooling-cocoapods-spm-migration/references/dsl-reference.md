@@ -11,10 +11,10 @@ kotlin {
 
     swiftPMDependencies {
         // Deployment versions
-        iosDeploymentVersion.set("16.0")
-        macosDeploymentVersion.set("13.0")
-        tvosDeploymentVersion.set("16.0")
-        watchosDeploymentVersion.set("9.0")
+        iosMinimumDeploymentTarget.set("16.0")
+        macosMinimumDeploymentTarget.set("13.0")
+        tvosMinimumDeploymentTarget.set("16.0")
+        watchosMinimumDeploymentTarget.set("9.0")
 
         // IDE integration
         xcodeProjectPathForKmpIJPlugin.set(
@@ -202,10 +202,10 @@ Set minimum deployment targets for each platform:
 
 ```kotlin
 swiftPMDependencies {
-    iosDeploymentVersion.set("16.0")
-    macosDeploymentVersion.set("13.0")
-    tvosDeploymentVersion.set("16.0")
-    watchosDeploymentVersion.set("9.0")
+    iosMinimumDeploymentTarget.set("16.0")
+    macosMinimumDeploymentTarget.set("13.0")
+    tvosMinimumDeploymentTarget.set("16.0")
+    watchosMinimumDeploymentTarget.set("9.0")
 }
 ```
 
@@ -257,7 +257,7 @@ kotlin {
     iosSimulatorArm64()
 
     swiftPMDependencies {
-        iosDeploymentVersion.set("16.0")
+        iosMinimumDeploymentTarget.set("16.0")
 
         xcodeProjectPathForKmpIJPlugin.set(
             layout.projectDirectory.file("../iosApp/iosApp.xcodeproj")

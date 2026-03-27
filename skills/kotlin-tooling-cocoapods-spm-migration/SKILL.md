@@ -210,7 +210,7 @@ group = "org.example.myproject"  // Required for import namespace
 
 For each pod dependency, add the equivalent SwiftPM package declaration. Use [common-pods-mapping.md](references/common-pods-mapping.md) to map each pod to its SPM package URL, product name, and `importedClangModules`.
 
-**Version preservation:** Match the version constraint semantics from the `cocoapods {}` block. Using `from()` for an exact CocoaPods version can resolve to a newer version that breaks cinterop APIs (removed symbols, changed signatures).
+**Version preservation:** Do NOT bump dependency versions during migration. Use the exact same version that was specified in the `cocoapods {}` block. Changing versions can resolve to different library builds that break cinterop APIs (removed symbols, changed signatures) and introduce issues unrelated to the migration itself.
 
 | CocoaPods version spec | SPM equivalent | Example |
 |------------------------|---------------|---------|
@@ -234,7 +234,7 @@ kotlin {
     iosX64()
 
     swiftPMDependencies {
-        iosDeploymentVersion.set("16.0")
+        iosMinimumDeploymentTarget.set("16.0")
 
         // If using KMP IntelliJ plugin, specify the .xcodeproj path:
         // xcodeProjectPathForKmpIJPlugin.set(

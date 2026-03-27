@@ -467,7 +467,8 @@ Indicators that a library may bundle cinterop klibs:
 
 ### Version Compatibility
 
-SPM versions may differ from CocoaPods versions. Always:
-1. Check the GitHub releases page for SPM-compatible versions
-2. **Preserve version constraint semantics from the `cocoapods {}` block.** CocoaPods `version = "X.Y.Z"` (without `~>`) is an exact pin — use `exact("X.Y.Z")` in SPM, not `from()`. Using `from()` for an exact version can resolve to a newer version that breaks cinterop APIs if symbols were removed or renamed. Only use `from()` when the CocoaPods spec used optimistic versioning (`~>`).
-3. Test thoroughly after migration
+Do NOT bump dependency versions during migration — use the exact same version from the `cocoapods {}` block. Always:
+1. **Use the same version.** If the pod was `version = "1.4.1"`, the SPM package must be `exact("1.4.1")`. Bumping versions can break cinterop APIs and introduce issues unrelated to the migration.
+2. CocoaPods `version = "X.Y.Z"` (without `~>`) is an exact pin — use `exact("X.Y.Z")` in SPM, not `from()`. Only use `from()` when the CocoaPods spec used optimistic versioning (`~>`).
+3. Check the GitHub releases page to confirm the exact version is available as an SPM release
+4. Test thoroughly after migration
