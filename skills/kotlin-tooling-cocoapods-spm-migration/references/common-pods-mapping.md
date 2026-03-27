@@ -241,18 +241,19 @@ Repository: `https://github.com/googlemaps/ios-maps-sdk.git`
 - **iOS 16+ only** — no macOS, tvOS, or watchOS support
 - **Xcode 16.0+** required
 - Must use `exact()` version — `from()` will fail to resolve
-- Single SPM product: `GoogleMaps`
+- Single SPM product: `GoogleMaps` (wraps a binary xcframework via `GoogleMapsTarget`)
+- CocoaPods subspec `GoogleMaps/Maps` maps to the single `GoogleMaps` SPM product
 - Requires a Google Maps Platform API key configured in the iOS app
-- Uses semantic versioning; check [releases](https://github.com/googlemaps/ios-maps-sdk/releases) for available versions (latest: 10.8.0)
+- Check [releases](https://github.com/googlemaps/ios-maps-sdk/releases) for available SPM versions
 
 ```kotlin
 // CocoaPods
-pod("GoogleMaps") { version = "10.3.0" }
+pod("GoogleMaps") { version = "10.10.0" }
 
-// SwiftPM
+// SwiftPM — use the exact same version as the pod
 swiftPackage(
     url = url("https://github.com/googlemaps/ios-maps-sdk.git"),
-    version = exact("10.6.0"),  // Must use exact(), not from()
+    version = exact("10.10.0"),  // Must use exact(), not from()
     products = listOf(
         product("GoogleMaps", platforms = setOf(iOS()))  // iOS-only platform constraint required
     ),
