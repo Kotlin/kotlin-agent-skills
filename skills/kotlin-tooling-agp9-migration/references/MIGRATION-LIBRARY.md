@@ -211,13 +211,13 @@ The new KMP-integrated plugin does NOT change the expected source directory layo
 
 **No renames are required** if you already use the standard KMP layout. If your module previously used the classic Android layout (`src/main/java/`, `src/main/res/`), you must migrate to the KMP layout:
 
-| Old (Android layout)           | New (KMP layout)                                                           |
-|--------------------------------|----------------------------------------------------------------------------|
-| `src/main/java/`               | `src/androidMain/kotlin/`                                                  |
-| `src/main/res/`                | `src/androidMain/res/`                                                     |
-| `src/main/AndroidManifest.xml` | `src/androidMain/AndroidManifest.xml`                                      |
-| `src/test/java/`               | `src/androidHostTest/kotlin/` (or `src/androidUnitTest/kotlin/`)           |
-| `src/androidTest/java/`        | `src/androidDeviceTest/kotlin/` (or `src/androidInstrumentedTest/kotlin/`) |
+| Old (Android layout)           | New (KMP layout)                      |
+|--------------------------------|---------------------------------------|
+| `src/main/java/`               | `src/androidMain/kotlin/`             |
+| `src/main/res/`                | `src/androidMain/res/`                |
+| `src/main/AndroidManifest.xml` | `src/androidMain/AndroidManifest.xml` |
+| `src/test/java/`               | `src/androidHostTest/kotlin/`         |
+| `src/androidTest/java/`        | `src/androidDeviceTest/kotlin/`       |
 
 ---
 
