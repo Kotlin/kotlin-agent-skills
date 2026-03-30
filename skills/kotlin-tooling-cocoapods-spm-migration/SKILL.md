@@ -126,7 +126,7 @@ To inspect klib contents and verify bundled bindings, see [troubleshooting.md](r
 3. **Framework configuration** - Record `baseName`, `isStatic`, deployment target from `cocoapods.framework {}`
 4. **linkOnly pods** - Record pods declared with `linkOnly = true`. These have two common patterns:
    - **KMP wrapper libraries** (e.g., `dev.gitlive:firebase-*`): the wrapper provides Kotlin APIs, and the pod is only linked. See [common-pods-mapping.md](references/common-pods-mapping.md) for implications.
-   - **Multi-module projects**: the consuming module declares `linkOnly = true` because a child module already provides cinterop bindings for that pod. In SwiftPM, the `swiftPackage()` declaration should go **only** in the child module that uses the pod directly. The consuming module must NOT redeclare the same packages — it only needs a `swiftPMDependencies {}` block without those packages (or an empty one if all pods were `linkOnly`).
+   - **Multi-module projects**: the consuming module declares `linkOnly = true` because a child module already provides cinterop bindings for that pod. In SwiftPM, the `swiftPackage()` declaration should go **only** in the child module that uses the pod directly. The consuming module must NOT redeclare the same packages — it only needs a `swiftPMDependencies {}` block without those packages (or an empty one if all pods were `linkOnly`). **Import namespace implication:** when the consuming module imports SPM classes that come from a child module's `swiftPMDependencies`, the import path uses the **child module's** group and name as the namespace (see Phase 4 Import Namespace Formula).
 5. **Kotlin imports** - Find all `import cocoapods.*` statements. Cross-reference with step 1.3 to identify which imports come from bundled klibs (and must be preserved) vs. which come from direct pod cinterop (and must be transformed).
 6. **Map pods to SPM** - See [common-pods-mapping.md](references/common-pods-mapping.md)
 7. **Locate iOS project directory** - Find the directory containing `Podfile` and `.xcworkspace`:
@@ -304,12 +304,14 @@ For full DSL reference, see [dsl-reference.md](references/dsl-reference.md).
 swiftPMImport.<group>.<module>.<ClassName>
 
 Where:
-- group: build.gradle.kts `group` property, dashes (-) → dots (.)
-- module: Gradle module name, dashes (-) → dots (.), underscores (_) preserved as-is
+- group: build.gradle.kts `group` property of the MODULE THAT DECLARES the swiftPMDependencies, dashes (-) → dots (.)
+- module: Gradle module name of the MODULE THAT DECLARES the swiftPMDependencies, dashes (-) → dots (.), underscores (_) preserved as-is
 - ClassName: Objective-C class name (FIR* for Firebase, GMS* for Google Maps)
 ```
 
-### Example Transformation
+**The namespace uses the declaring module's group+name, not the importing module's.** This is the most common mistake agents make. When module A depends on module B, and module B declares `swiftPMDependencies`, module A imports SPM classes using module B's group and module name — NOT module A's.
+
+### Example Transformation — Single Module
 
 ```kotlin
 // group = "org.jetbrains.kotlin.firebase.sample", module = "kotlin-library"
@@ -320,6 +322,26 @@ import cocoapods.FirebaseAnalytics.FIRAnalytics
 // AFTER:
 import swiftPMImport.org.jetbrains.kotlin.firebase.sample.kotlin.library.FIRAnalytics
 ```
+
+### Example Transformation — Multi-Module (linkOnly pods)
+
+When a consuming module had `pod("GoogleMaps") { linkOnly = true }` because a child module provides the cinterop bindings:
+
+```kotlin
+// composeApp/App.kt — composeApp depends on :google-maps Gradle module
+// google-maps has group = "org.jetbrains.kotlin.google-maps", module name = "google-maps"
+// google-maps declares swiftPMDependencies with GoogleMaps
+
+// BEFORE (in composeApp):
+import cocoapods.GoogleMaps.GMSServices
+
+// AFTER — uses google-maps module's namespace, NOT composeApp's namespace:
+import swiftPMImport.org.jetbrains.kotlin.google.maps.google.maps.GMSServices
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^
+//                    google-maps's group (dashes→dots)  google-maps's module name (dashes→dots)
+```
+
+The import path does NOT use composeApp's group (`org.jetbrains.kotlin.compose.sample`). It uses the declaring module's identity because that's where the cinterop bindings are generated.
 
 **Import flattening:** The Clang module name (e.g., `FirebaseFirestoreInternal`, `FirebaseAuth`) disappears from the import path — all classes are flattened under the same `swiftPMImport.<group>.<module>` prefix regardless of which library they come from. For example, both `cocoapods.FirebaseAuth.FIRAuth` and `cocoapods.FirebaseFirestoreInternal.FIRFirestore` become `swiftPMImport.<group>.<module>.FIRAuth` and `swiftPMImport.<group>.<module>.FIRFirestore`.
 
@@ -335,11 +357,11 @@ import cocoapods.FirebaseMessaging.FIRMessaging
 
 ### Bulk Replacement
 
-Use a regex find-and-replace across all Kotlin source files, **excluding imports identified in Phase 1 step 1.3**:
+Use a regex find-and-replace across all Kotlin source files, **excluding imports identified in Phase 1 step 1.3**. In multi-module projects, run the replacement separately for each module using that module's group and name:
 
 ```
 Find:    cocoapods\.\w+\.
-Replace: swiftPMImport.<your.group>.<your.module>.
+Replace: swiftPMImport.<declaring.module.group>.<declaring.module.name>.
 ```
 
 After bulk replacement, **manually restore** any `cocoapods.*` imports that should be preserved (from bundled klibs).
