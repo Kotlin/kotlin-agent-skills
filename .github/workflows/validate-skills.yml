@@ -5,12 +5,8 @@ name: Validate Agent Skill
 on:
   push:
     branches: [main]
-    paths:
-      - "**/SKILL.md"
   pull_request:
     branches: [main]
-    paths:
-      - "**/SKILL.md"
 
 concurrency:
   group: validate-skill-${{ github.ref }}
