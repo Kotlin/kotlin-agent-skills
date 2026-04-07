@@ -5,9 +5,15 @@ Use this checklist after configuring Kotlin in a Gradle project.
 ## Build Configuration
 
 - [ ] `kotlin("jvm")` plugin applied in `build.gradle.kts` (not just declared with `apply false`)
-- [ ] `kotlin { jvmToolchain(N) }` set matching the project's Java version
+- [ ] JVM toolchain configured: either `kotlin { jvmToolchain(N) }` set, OR project already has `java.toolchain.languageVersion` (do not add both)
 - [ ] No explicit `kotlin-stdlib` dependency (managed by the plugin automatically)
 - [ ] `mavenCentral()` in `repositories {}` block
+
+## Compiler Plugins (Framework Detection)
+
+- [ ] If project uses Spring (`spring-boot-starter-*`, Spring plugin): `kotlin("plugin.spring")` applied
+- [ ] If project uses JPA (`spring-boot-starter-data-jpa`, `jakarta.persistence`, `hibernate-core`): `kotlin("plugin.jpa")` applied
+- [ ] If project uses kotlinx-serialization: `kotlin("plugin.serialization")` applied
 
 ## Test Dependencies
 

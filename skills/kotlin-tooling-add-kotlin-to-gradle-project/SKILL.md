@@ -33,6 +33,16 @@ Before making changes, understand what exists:
 6. Note the Java version (`jvmToolchain`, `sourceCompatibility`, `JavaVersion`, or
    `java.toolchain.languageVersion`)
 7. Check for existing test framework setup (`useJUnitPlatform()`, test dependencies)
+8. Check whether `java.toolchain.languageVersion` is already configured — if so, record
+   this fact so you can skip adding `kotlin { jvmToolchain(...) }` in Step 2
+9. Detect framework usage that requires Kotlin compiler plugins:
+   - **Spring**: look for `org.springframework.boot` plugin, Spring Boot starters
+     (`spring-boot-starter-*`), or Spring Framework dependencies (`spring-context`,
+     `spring-web`, etc.) in the `dependencies {}` block or version catalog
+   - **JPA**: look for JPA-related dependencies (`spring-boot-starter-data-jpa`,
+     `jakarta.persistence-api`, `hibernate-core`, `javax.persistence-api`) or
+     `@Entity` annotations in Java source files
+   - **Serialization**: look for `kotlinx-serialization` dependencies
 
 If Bash is available, run `scripts/analyze-gradle-project.sh` from this skill's
 directory to get a structured summary.
@@ -87,8 +97,14 @@ The `kotlin("jvm")` plugin handles everything needed for mixed Java-Kotlin compi
 
 ## Step 2: Configure JVM Toolchain
 
-Set the JVM toolchain version to match the project's Java version. This ensures
-Kotlin targets the same JVM version as Java code:
+**Important:** If the project already has `java.toolchain.languageVersion` configured
+(e.g., `java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }`),
+**do NOT add `kotlin { jvmToolchain(...) }`**. The Kotlin JVM plugin automatically
+picks up the Java toolchain setting. Adding a redundant `jvmToolchain` call creates
+unnecessary duplication and can confuse maintainers.
+
+Only add `kotlin { jvmToolchain(N) }` when the project does NOT have
+`java.toolchain.languageVersion` set:
 
 ```kotlin
 kotlin {
@@ -102,12 +118,8 @@ of the Java version in a Gradle project:
 | Existing setting | Example | Toolchain value |
 |-----------------|---------|-----------------|
 | `java.sourceCompatibility` | `JavaVersion.VERSION_17` | `17` |
-| `java.toolchain.languageVersion` | `JavaLanguageVersion.of(17)` | `17` |
+| `java.toolchain.languageVersion` | `JavaLanguageVersion.of(17)` | Already handled — skip this step |
 | `sourceCompatibility` in `java {}` | `"17"` | `17` |
-
-If a `java.toolchain.languageVersion` is already set, the Kotlin plugin picks it up
-automatically and `kotlin { jvmToolchain(...) }` is not needed. But setting it
-explicitly is harmless and makes the Kotlin configuration self-documenting.
 
 ## Step 3: Add Kotlin Test Dependency
 
@@ -272,11 +284,69 @@ subprojects {
 }
 ```
 
-## Kotlin Compiler Plugins (Optional)
+## Step 6: Add Required Compiler Plugins
 
-If the project uses frameworks that require compiler plugins (Spring, JPA,
-serialization), add them in the `plugins {}` block. See
-[references/COMPILER-PLUGINS.md](references/COMPILER-PLUGINS.md) for details.
+Based on the framework detection from Step 0, add the necessary Kotlin compiler
+plugins. This step is **not optional** — failing to add these plugins will cause
+runtime errors in Spring and JPA projects.
+
+### Spring Projects
+
+If the project uses Spring Framework or Spring Boot (detected by any of: Spring Boot
+plugin `org.springframework.boot`, dependencies matching `spring-boot-starter-*`,
+`spring-context`, `spring-web`, `spring-webflux`, or `@Component`/`@Service`/
+`@Configuration` annotations in Java source), you **must** add `plugin.spring`:
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.1.20"
+    kotlin("plugin.spring") version "2.1.20"
+}
+```
+
+Without this plugin, Kotlin classes annotated with `@Component`, `@Service`,
+`@Configuration`, etc. will be `final` by default, causing Spring's proxy-based
+mechanisms to fail at runtime.
+
+### JPA Projects
+
+If the project uses JPA (detected by any of: `spring-boot-starter-data-jpa`,
+`jakarta.persistence-api`, `javax.persistence-api`, `hibernate-core` dependencies,
+or `@Entity` annotations in Java source), you **must** add `plugin.jpa`:
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.1.20"
+    kotlin("plugin.jpa") version "2.1.20"
+}
+```
+
+Without this plugin, JPA entity classes written in Kotlin will lack the required
+no-argument constructor, causing Hibernate to fail at runtime.
+
+For projects that use both Spring and JPA, add both plugins:
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.1.20"
+    kotlin("plugin.spring") version "2.1.20"
+    kotlin("plugin.jpa") version "2.1.20"
+}
+```
+
+### Serialization Projects
+
+If the project uses `kotlinx-serialization`, add `plugin.serialization`:
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.1.20"
+    kotlin("plugin.serialization") version "2.1.20"
+}
+```
+
+See [references/COMPILER-PLUGINS.md](references/COMPILER-PLUGINS.md) for version
+catalog syntax and custom annotation configuration.
 
 ## Common Issues
 
