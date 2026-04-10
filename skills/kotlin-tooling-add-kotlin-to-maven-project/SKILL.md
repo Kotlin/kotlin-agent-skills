@@ -49,18 +49,21 @@ plugin with `<extensions>true</extensions>` handles both automatically.
 ## Step 1: Add Kotlin Version Property
 
 Add the `kotlin.version` property to the `<properties>` section of `pom.xml`.
-Use the latest stable Kotlin version. If the property already exists, verify it
-points to a recent version.
+Use the latest stable Kotlin version — at minimum **2.3.20**, which is required for
+the `<extensions>true</extensions>` smart defaults described in Step 2.
 
 ```xml
 <properties>
     <!-- ... existing properties ... -->
-    <kotlin.version>2.1.20</kotlin.version>
+    <kotlin.version>2.3.20</kotlin.version>
 </properties>
 ```
 
-Check the latest Kotlin version at https://kotlinlang.org/docs/releases.html
-and use it instead of the example above if a more recent stable release exists.
+Before using this example version, check for a more recent stable release at
+https://kotlinlang.org/docs/releases.html or look up the latest version of
+`org.jetbrains.kotlin:kotlin-maven-plugin` on
+https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-maven-plugin.
+If the property already exists, verify it points to version 2.3.20 or later.
 
 ## Step 2: Configure Kotlin Maven Plugin
 
@@ -93,6 +96,10 @@ This single setting handles several things that previously required manual confi
   Kotlin classes and vice versa
 - **Removes the need for `maven-compiler-plugin` configuration** — the Kotlin plugin
   takes over compilation orchestration
+
+> **Minimum version:** These smart defaults require Kotlin **2.3.20** or later.
+> Earlier versions of `kotlin-maven-plugin` support `<extensions>true</extensions>`
+> but do not automatically add `kotlin-stdlib` or register Kotlin source directories.
 
 ### Important: Plugin Placement
 
@@ -237,12 +244,20 @@ plugin is a no-op when there are no `.kt` sources.
 
 The `kotlin.version` property should be defined in the parent POM's `<properties>`.
 
-## Kotlin Compiler Plugins (Optional)
+## Kotlin Compiler Plugins (Framework-Dependent)
 
-If the project uses frameworks that require compiler plugins, add them to the
-`kotlin-maven-plugin` configuration. See
-[references/COMPILER-PLUGINS.md](references/COMPILER-PLUGINS.md) for details on
-Spring, serialization, all-open, and no-arg plugins.
+Some frameworks require Kotlin compiler plugins to work correctly. **For Spring Boot
+and JPA projects, this step is required — not optional.** The `spring` plugin opens
+framework-annotated classes, and the `jpa` plugin generates no-arg constructors for
+entities.
+
+Check the project's dependencies:
+- Uses **Spring Boot** (`spring-boot-starter-*`) → add the `spring` compiler plugin
+- Uses **JPA/Hibernate** (`jakarta.persistence` / `javax.persistence`) → add the `jpa` compiler plugin
+- Uses **kotlinx.serialization** (`@Serializable`) → add the `kotlinx-serialization` plugin
+
+See [references/COMPILER-PLUGINS.md](references/COMPILER-PLUGINS.md) for configuration
+details and examples of combining multiple plugins.
 
 ## Common Issues
 

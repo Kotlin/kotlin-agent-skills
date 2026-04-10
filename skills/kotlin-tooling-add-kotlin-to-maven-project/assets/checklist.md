@@ -4,7 +4,7 @@ Use this checklist after configuring Kotlin in a Maven project.
 
 ## Build Configuration
 
-- [ ] `kotlin.version` property defined in `<properties>`
+- [ ] `kotlin.version` is 2.3.20 or later (required for extensions smart defaults)
 - [ ] `kotlin-maven-plugin` in `<build><plugins>` (not just in `<pluginManagement>`)
 - [ ] `<extensions>true</extensions>` set on the Kotlin plugin
 - [ ] No explicit `kotlin-stdlib` dependency (managed by extensions)
