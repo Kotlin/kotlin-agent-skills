@@ -259,6 +259,27 @@ Check the project's dependencies:
 See [references/COMPILER-PLUGINS.md](references/COMPILER-PLUGINS.md) for configuration
 details and examples of combining multiple plugins.
 
+### Spring Runtime Dependency: `kotlin-reflect`
+
+Spring Boot applications written in Kotlin (especially those using Spring Data JPA)
+require `kotlin-reflect` at runtime. It is used for Spring's reflection-based DI,
+AOP proxies, and Jackson's Kotlin module (JSON (de)serialization of Kotlin classes).
+The `kotlin-maven-plugin` with `<extensions>true</extensions>` adds `kotlin-stdlib`
+automatically, but **not** `kotlin-reflect`.
+
+When Spring is detected, add the dependency explicitly:
+
+```xml
+<dependency>
+    <groupId>org.jetbrains.kotlin</groupId>
+    <artifactId>kotlin-reflect</artifactId>
+    <version>${kotlin.version}</version>
+</dependency>
+```
+
+Without this, Spring Boot applications fail at runtime with `ClassNotFoundException`
+or missing reflection metadata errors for Kotlin classes.
+
 ## Common Issues
 
 ### "Cannot find symbol" for Kotlin Classes from Java

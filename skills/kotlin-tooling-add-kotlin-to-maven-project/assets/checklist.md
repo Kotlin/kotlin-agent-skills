@@ -9,6 +9,10 @@ Use this checklist after configuring Kotlin in a Maven project.
 - [ ] `<extensions>true</extensions>` set on the Kotlin plugin
 - [ ] No explicit `kotlin-stdlib` dependency (managed by extensions)
 
+## Framework-Dependent Dependencies
+
+- [ ] If project uses Spring: `kotlin-reflect` dependency added (required at runtime for Spring DI, proxies, and Jackson Kotlin support)
+
 ## Test Dependencies
 
 - [ ] `junit-jupiter-engine` present with `<scope>test</scope>` (if using JUnit 5)

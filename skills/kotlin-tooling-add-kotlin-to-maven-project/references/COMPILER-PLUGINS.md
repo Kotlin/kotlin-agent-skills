@@ -8,6 +8,21 @@ etc.), configure them inside the `kotlin-maven-plugin` block.
 Spring requires classes and certain members to be non-final. The `spring` compiler
 plugin (built on `all-open`) handles this automatically.
 
+In addition, Spring Boot Kotlin projects need `kotlin-reflect` as a **runtime
+dependency** (separate from the compiler plugin). Add it to the regular
+`<dependencies>` block of the module:
+
+```xml
+<dependency>
+    <groupId>org.jetbrains.kotlin</groupId>
+    <artifactId>kotlin-reflect</artifactId>
+    <version>${kotlin.version}</version>
+</dependency>
+```
+
+Without `kotlin-reflect`, Spring's DI, proxy generation, and Jackson's Kotlin module
+fail at runtime. This is especially visible in Spring Data JPA projects.
+
 ```xml
 <plugin>
     <groupId>org.jetbrains.kotlin</groupId>
