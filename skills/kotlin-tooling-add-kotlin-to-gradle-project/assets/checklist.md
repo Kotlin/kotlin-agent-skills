@@ -12,6 +12,7 @@ Use this checklist after configuring Kotlin in a Gradle project.
 ## Compiler Plugins (Framework Detection)
 
 - [ ] If project uses Spring (`spring-boot-starter-*`, Spring plugin): `kotlin("plugin.spring")` applied
+- [ ] If project uses Spring: `implementation("org.jetbrains.kotlin:kotlin-reflect")` added (required at runtime for Spring DI, proxies, and Jackson Kotlin support)
 - [ ] If project uses JPA (`spring-boot-starter-data-jpa`, `jakarta.persistence`, `hibernate-core`): `kotlin("plugin.jpa")` applied
 - [ ] If project uses kotlinx-serialization: `kotlin("plugin.serialization")` applied
 

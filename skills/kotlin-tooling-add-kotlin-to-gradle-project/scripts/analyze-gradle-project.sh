@@ -202,12 +202,23 @@ analyze_build_file() {
         GLOBAL_NEEDS_JPA="yes"
     fi
 
+    # Check for kotlin-reflect dependency (required for Spring at runtime)
+    HAS_KOTLIN_REFLECT="no"
+    if grep -qE 'org\.jetbrains\.kotlin:kotlin-reflect|kotlin\("reflect"\)' "$BUILD"; then
+        HAS_KOTLIN_REFLECT="yes"
+    fi
+
     # Report framework detection and missing plugins
     if [ "$NEEDS_SPRING" = "yes" ]; then
         if echo "$COMPILER_PLUGINS" | grep -q 'spring'; then
             echo "  Spring framework: detected (plugin.spring already applied)"
         else
             echo "  Spring framework: DETECTED — kotlin(\"plugin.spring\") MUST be added"
+        fi
+        if [ "$HAS_KOTLIN_REFLECT" = "yes" ]; then
+            echo "  kotlin-reflect: found (required runtime dependency for Spring)"
+        else
+            echo "  kotlin-reflect: MISSING — implementation(\"org.jetbrains.kotlin:kotlin-reflect\") MUST be added"
         fi
     fi
     if [ "$NEEDS_JPA" = "yes" ]; then
@@ -266,6 +277,9 @@ analyze_build_file() {
     if [ "$NEEDS_SPRING" = "yes" ] && ! echo "$COMPILER_PLUGINS" | grep -q 'spring'; then
         echo "    -> Add kotlin(\"plugin.spring\") — required for Spring classes to work with Kotlin."
     fi
+    if [ "$NEEDS_SPRING" = "yes" ] && [ "$HAS_KOTLIN_REFLECT" = "no" ]; then
+        echo "    -> Add implementation(\"org.jetbrains.kotlin:kotlin-reflect\") — required at runtime for Spring."
+    fi
     if [ "$NEEDS_JPA" = "yes" ] && ! echo "$COMPILER_PLUGINS" | grep -q 'jpa'; then
         echo "    -> Add kotlin(\"plugin.jpa\") — required for JPA entities in Kotlin."
     fi
@@ -312,6 +326,7 @@ fi
 next_step; echo "  $STEP. Add testImplementation(kotlin(\"test\")) to dependencies"
 if [ "$GLOBAL_NEEDS_SPRING" = "yes" ]; then
     next_step; echo "  $STEP. Add kotlin(\"plugin.spring\") — Spring framework detected"
+    next_step; echo "  $STEP. Add implementation(\"org.jetbrains.kotlin:kotlin-reflect\") — required at runtime for Spring"
 fi
 if [ "$GLOBAL_NEEDS_JPA" = "yes" ]; then
     next_step; echo "  $STEP. Add kotlin(\"plugin.jpa\") — JPA detected"

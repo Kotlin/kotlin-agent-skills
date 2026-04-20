@@ -308,6 +308,22 @@ Without this plugin, Kotlin classes annotated with `@Component`, `@Service`,
 `@Configuration`, etc. will be `final` by default, causing Spring's proxy-based
 mechanisms to fail at runtime.
 
+Spring also requires `kotlin-reflect` at runtime — it is used for reflection-based
+dependency injection, AOP proxies, and Jackson's Kotlin module (used by Spring Boot
+for JSON (de)serialization of Kotlin classes). `kotlin-stdlib` does **not** include
+it, so add it explicitly:
+
+```kotlin
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+}
+```
+
+Omit the version — the Kotlin Gradle plugin aligns `kotlin-reflect` with the Kotlin
+version used by the project. Without this dependency, Spring Boot applications
+(especially those using Spring Data JPA) fail at runtime with `ClassNotFoundException`
+or missing reflection metadata errors.
+
 ### JPA Projects
 
 If the project uses JPA (detected by any of: `spring-boot-starter-data-jpa`,
