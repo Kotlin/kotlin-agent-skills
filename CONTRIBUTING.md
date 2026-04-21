@@ -20,6 +20,8 @@ Check out the [skill-creator](https://github.com/anthropics/skills/tree/main/ski
 - ✅ Clear documentation and use cases
 - ✅ Skill category is properly selected
 - ✅ No security vulnerabilities or malicious code
+- ✅ Include a list of projects the skill was tested on (with links if publicly available). 
+Optionally, include a comparison of agent performance with and without the skill (e.g., success rate or output quality)
 
 ## Adding a new skills distribution way
 
