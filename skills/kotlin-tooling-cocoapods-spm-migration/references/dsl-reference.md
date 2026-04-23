@@ -11,18 +11,13 @@ kotlin {
 
     swiftPMDependencies {
         // Deployment versions
-        iosDeploymentVersion.set("16.0")
-        macosDeploymentVersion.set("13.0")
-        tvosDeploymentVersion.set("16.0")
-        watchosDeploymentVersion.set("9.0")
-
-        // IDE integration
-        xcodeProjectPathForKmpIJPlugin.set(
-            layout.projectDirectory.file("../iosApp/iosApp.xcodeproj")
-        )
+        iosMinimumDeploymentTarget.set("16.0")
+        macosMinimumDeploymentTarget.set("13.0")
+        tvosMinimumDeploymentTarget.set("16.0")
+        watchosMinimumDeploymentTarget.set("9.0")
 
         // Module discovery (default: true)
-        discoverModulesImplicitly = true
+        discoverClangModulesImplicitly = true
 
         // Package declarations
         swiftPackage(...)
@@ -155,11 +150,11 @@ Available platforms:
 
 ### Automatic Discovery (Default)
 
-By default, `discoverModulesImplicitly = true`. SwiftPM import automatically discovers and imports all accessible Clang modules.
+By default, `discoverClangModulesImplicitly = true`. SwiftPM import automatically discovers and imports all accessible Clang modules.
 
-**IMPORTANT:** When `discoverModulesImplicitly = true`, the `importedClangModules` parameter is ignored. Only set `importedClangModules` when `discoverModulesImplicitly = false`.
+**IMPORTANT:** When `discoverClangModulesImplicitly = true`, the `importedClangModules` parameter is ignored. Only set `importedClangModules` when `discoverClangModulesImplicitly = false`.
 
-**IMPORTANT for Firebase:** Set `discoverModulesImplicitly = false` when using Firebase. Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop generation. Disable implicit discovery and explicitly list only the Firebase modules you need in `importedClangModules`.
+**IMPORTANT for Firebase:** Set `discoverClangModulesImplicitly = false` when using Firebase. Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop generation. Disable implicit discovery and explicitly list only the Firebase modules you need in `importedClangModules`.
 
 ### Explicit Module Import
 
@@ -167,7 +162,7 @@ When automatic discovery is disabled and the Clang module name differs from the 
 
 ```kotlin
 swiftPMDependencies {
-    discoverModulesImplicitly = false  // Disable auto-discovery
+    discoverClangModulesImplicitly = false  // Disable auto-discovery
 
     swiftPackage(
         url = url("https://github.com/firebase/firebase-ios-sdk.git"),
@@ -192,7 +187,7 @@ swiftPMDependencies {
 | Product name = module name | No (auto-discovery works) |
 | Product name != module name | Yes |
 | Multiple modules per product | Yes |
-| Using discoverModulesImplicitly = false | Yes |
+| Using discoverClangModulesImplicitly = false | Yes |
 
 ---
 
@@ -202,41 +197,12 @@ Set minimum deployment targets for each platform:
 
 ```kotlin
 swiftPMDependencies {
-    iosDeploymentVersion.set("16.0")
-    macosDeploymentVersion.set("13.0")
-    tvosDeploymentVersion.set("16.0")
-    watchosDeploymentVersion.set("9.0")
+    iosMinimumDeploymentTarget.set("16.0")
+    macosMinimumDeploymentTarget.set("13.0")
+    tvosMinimumDeploymentTarget.set("16.0")
+    watchosMinimumDeploymentTarget.set("9.0")
 }
 ```
-
----
-
-## IDE Integration
-
-If you are using the KMP IntelliJ plugin to build the iOS application, specify the path to the `.xcodeproj` that has the `embedAndSignAppleFrameworkForXcode` integration:
-
-```kotlin
-kotlin {
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64(),
-        iosX64(),
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "Shared"
-            isStatic = true
-        }
-    }
-
-    swiftPMDependencies {
-        xcodeProjectPathForKmpIJPlugin.set(
-            layout.projectDirectory.file("../iosApp/iosApp.xcodeproj")
-        )
-    }
-}
-```
-
-This enables the IDE to properly resolve SwiftPM dependencies and provide code completion. The path should point to the `.xcodeproj` file (not `.xcworkspace`).
 
 ---
 
@@ -257,11 +223,7 @@ kotlin {
     iosSimulatorArm64()
 
     swiftPMDependencies {
-        iosDeploymentVersion.set("16.0")
-
-        xcodeProjectPathForKmpIJPlugin.set(
-            layout.projectDirectory.file("../iosApp/iosApp.xcodeproj")
-        )
+        iosMinimumDeploymentTarget.set("16.0")
 
         // Firebase packages
         swiftPackage(

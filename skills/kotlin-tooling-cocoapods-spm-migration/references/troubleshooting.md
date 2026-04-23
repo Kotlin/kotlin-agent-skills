@@ -77,7 +77,7 @@ import swiftPMImport.org.jetbrains.kotlin.firebase.sample.kotlin.library.FIRAnal
 2. **Verify SPM package is linked in Xcode:**
    - Open project in Xcode
    - Check Package Dependencies section
-   - Ensure `_internal_linkage_SwiftPMImport` is present
+   - Ensure `KotlinMultiplatformLinkedPackage` is present
 
 3. **Check framework configuration** — `isStatic = true` is recommended. While `isStatic = false` can work, dynamic frameworks have known edge cases with SwiftPM import (linker errors, dyld crashes, duplicate class warnings). It is required with `dev.gitlive:firebase-*` — see below.
 
@@ -291,7 +291,7 @@ iosTarget.binaries.framework {
 }
 ```
 
-With a static framework, all symbols are embedded in the `.a` archive. No `LC_LOAD_DYLIB` entries are created. Unresolved `-framework` flags from dev.gitlive klibs are deferred to the final Xcode app link, where `_internal_linkage_SwiftPMImport` provides them.
+With a static framework, all symbols are embedded in the `.a` archive. No `LC_LOAD_DYLIB` entries are created. Unresolved `-framework` flags from dev.gitlive klibs are deferred to the final Xcode app link, where `KotlinMultiplatformLinkedPackage` provides them.
 
 **After switching to static, also:**
 1. Re-run `integrateLinkagePackage` — regenerates `Package.swift` with `type: .none` (static)
@@ -517,7 +517,7 @@ If the automatic `integrateEmbedAndSign` / `integrateLinkagePackage` tasks fail,
    ```
 3. Set `ENABLE_USER_SCRIPT_SANDBOXING = NO` (Build Settings → Build Options → User Script Sandboxing)
 4. Run `./gradlew --stop` to restart the Gradle daemon after changing sandboxing
-5. Add local package: `../moduleName/_internal_linkage_SwiftPMImport`
+5. Add local package: `../moduleName/KotlinMultiplatformLinkedPackage`
 
 ---
 
@@ -609,7 +609,7 @@ If issues persist:
    ```
 
 3. **Check generated files:**
-   - Look in `moduleName/_internal_linkage_SwiftPMImport/` for Package.swift
+   - Look in `moduleName/KotlinMultiplatformLinkedPackage/` for Package.swift
 
 4. **Inspect klib contents** using the `klib` tool ([docs](https://kotlinlang.org/docs/native-libraries.html#using-kotlin-native-compiler)):
    ```bash

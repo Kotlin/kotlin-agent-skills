@@ -13,7 +13,7 @@ Migrate Kotlin Multiplatform projects from `kotlin("native.cocoapods")` to `swif
 
 ## Requirements
 
-- **Kotlin**: Version with Swift Import support (e.g., 2.4.0-Beta1 or later)
+- **Kotlin**: Version with Swift Import support (e.g., 2.4.0-Beta2 or later)
 - **Xcode**: 16.4 or 26.0+
 - **iOS Deployment Target**: 16.0+ recommended
 
@@ -234,12 +234,7 @@ kotlin {
     iosX64()
 
     swiftPMDependencies {
-        iosDeploymentVersion.set("16.0")
-
-        // If using KMP IntelliJ plugin, specify the .xcodeproj path:
-        // xcodeProjectPathForKmpIJPlugin.set(
-        //     layout.projectDirectory.file("../iosApp/iosApp.xcodeproj")
-        // )
+        iosMinimumDeploymentTarget.set("16.0")
 
         swiftPackage(
             url = url("https://github.com/owner/repo.git"),
