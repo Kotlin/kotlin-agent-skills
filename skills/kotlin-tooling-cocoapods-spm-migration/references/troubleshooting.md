@@ -4,26 +4,6 @@ Common issues and solutions when migrating from CocoaPods to SwiftPM.
 
 ## Gradle Issues
 
-### "swiftPMDependencies not found"
-
-**Symptom:** Unresolved reference to `swiftPMDependencies` in build.gradle.kts
-
-**Solution:** Add buildscript constraint to root build.gradle.kts:
-
-```kotlin
-buildscript {
-    dependencies.constraints {
-        "classpath"("org.jetbrains.kotlin:kotlin-gradle-plugin:<kotlin-version>!!")
-    }
-}
-```
-
-Also verify:
-- Kotlin version matches the version recorded in Phase 1.0a in libs.versions.toml
-- Custom Maven repo (if needed) is in settings.gradle.kts
-
----
-
 ### Import Not Found After Migration
 
 **Symptom:** `Unresolved reference` errors for classes that worked with CocoaPods

@@ -74,7 +74,7 @@ Read the current Kotlin version from `gradle/libs.versions.toml` (or `build.grad
 
 **If the project already uses Kotlin 2.4.0-Beta2 or later** → record the version and skip Phase 2.1 (no version change needed).
 
-**If the project uses an older Kotlin version** → Phase 2.2 will upgrade it to `2.4.0-Beta2` (the first public release with `swiftPMDependencies` support, available on Maven Central — no custom repository needed). Warn the user: "⚠️ Kotlin version jump — upgrading across minor versions can introduce breaking changes unrelated to this migration. Recommended: update first, verify it builds, then re-run this migration." If the user confirms, proceed.
+**If the project uses an older Kotlin version** → Phase 2.1 will upgrade it to `2.4.0-Beta2` (the first public release with `swiftPMDependencies` support, available on Maven Central — no custom repository needed). Warn the user: "⚠️ Kotlin version jump — upgrading across minor versions can introduce breaking changes unrelated to this migration. Recommended: update first, verify it builds, then re-run this migration." If the user confirms, proceed.
 
 ### 1.1 Check for deprecated CocoaPods workaround property
 
@@ -145,21 +145,6 @@ kotlin = "2.4.0-Beta2"
 ```
 
 `2.4.0-Beta2` is available on Maven Central — no custom repository is needed.
-
-### 2.2 Add buildscript constraint (if swiftPMDependencies not recognized)
-
-If Gradle sync completes but `swiftPMDependencies {}` is still unresolved, add a strict version constraint to force all Kotlin plugin consumers to use the same version:
-
-```kotlin
-// root build.gradle.kts
-buildscript {
-    dependencies.constraints {
-        "classpath"("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0-Beta2!!")
-    }
-}
-```
-
-The `!!` suffix forces strict version resolution, ensuring no other dependency pulls in a different Kotlin Gradle plugin version.
 
 ---
 
