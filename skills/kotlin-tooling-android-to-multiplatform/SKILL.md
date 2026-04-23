@@ -281,53 +281,187 @@ navigation graph so migrated and non-migrated screens coexist. Once all screens 
 migrated, the full navigation graph can live in shared code.
 See [references/UI-MIGRATION.md](references/UI-MIGRATION.md) for code examples of mixed navigation graphs and platform screen injection
 
-## Phase 4: Add Platform Entry Points
+## Phase 4: Create Platform Entry Points and Wire Up Shared UI
 
-With shared logic and (optionally) shared UI in place, adding new platforms is straightforward.
+Phases 1–3 extracted shared logic and UI from the Android app into multiplatform modules. Phase 4 creates the actual applications for other platforms that **use** that shared UI. The Android app already works — it was the starting point. Now build entry points for iOS (required), and optionally Desktop and Web.
 
-### iOS Entry Point
+### 4.1 Configure Framework Export in the Shared Module
 
-1. Create an iOS Xcode project linked to the KMP framework. See the official
-   [tutorial on integrating KMP into existing apps](https://kotlinlang.org/docs/multiplatform/multiplatform-integrate-in-existing-app.html)
-2. Configure framework export in the shared module:
-   ```kotlin
-   kotlin {
-       listOf(iosArm64(), iosSimulatorArm64()).forEach {
-           it.binaries.framework {
-               baseName = "Shared"
-               isStatic = true
+Before creating platform apps, ensure the shared UI module exports a framework iOS can consume:
+
+```kotlin
+kotlin {
+    listOf(iosArm64(), iosSimulatorArm64()).forEach {
+        it.binaries.framework {
+            baseName = "Shared"
+            isStatic = true
+        }
+    }
+}
+```
+
+If the project has multiple shared modules, create an **umbrella module** that depends on all of them and re-exports a single framework — iOS apps can only link against one KMP framework.
+
+### 4.2 Create the Kotlin iOS Entry Point
+
+Create a `ComposeUIViewController` factory function in `iosMain` of the shared UI module. This is the bridge between Kotlin Compose UI and UIKit:
+
+```kotlin
+// shared-ui/src/iosMain/kotlin/MainViewController.kt
+import androidx.compose.ui.window.ComposeUIViewController
+
+fun MainViewController() = ComposeUIViewController { App() }
+```
+
+where `App()` is the top-level shared composable (the same one the Android app calls from its `MainActivity`).
+
+### 4.3 Create the Xcode Project (iOS App)
+
+1. Create the `iosApp/` directory at the project root
+2. Create the Xcode project structure:
+   ```
+   iosApp/
+   ├── iosApp.xcodeproj/
+   │   └── project.pbxproj
+   ├── iosApp/
+   │   ├── Info.plist
+   │   ├── iOSApp.swift          (app entry point)
+   │   └── ContentView.swift     (hosts the ComposeUIViewController)
+   └── iosApp.xcworkspace/       (if using CocoaPods or SPM workspace)
+   ```
+3. **`iOSApp.swift`** — the `@main` app struct:
+   ```swift
+   import SwiftUI
+
+   @main
+   struct iOSApp: App {
+       var body: some Scene {
+           WindowGroup {
+               ContentView()
            }
        }
    }
    ```
-3. If using Compose Multiplatform UI, provide a function returning a `ComposeUIViewController` with the embedded Compose content
-4. If using native SwiftUI, call shared Kotlin code from Swift through the framework
-5. If the project has multiple shared modules, create an **umbrella module** that re-exports them all — iOS apps can only link against one KMP framework
+4. **`ContentView.swift`** — wraps the Compose UI in a SwiftUI view:
+   ```swift
+   import UIKit
+   import SwiftUI
+   import Shared
 
-See the [iOS integration methods overview](https://kotlinlang.org/docs/multiplatform/multiplatform-ios-integration-overview.html)
+   struct ComposeView: UIViewControllerRepresentable {
+       func makeUIViewController(context: Context) -> UIViewController {
+           MainViewControllerKt.MainViewController()
+       }
+       func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+   }
+
+   struct ContentView: View {
+       var body: some View {
+           ComposeView().ignoresSafeArea(.keyboard)
+       }
+   }
+   ```
+5. **Link the KMP framework** — configure the Xcode project to find the Shared framework. Manually add a Run Script build phase that invokes the `embedAndSignAppleFrameworkForXcode` Gradle task.
+
+See the [official tutorial on integrating KMP into existing apps](https://kotlinlang.org/docs/multiplatform/multiplatform-integrate-in-existing-app.html) and the [iOS integration methods overview](https://kotlinlang.org/docs/multiplatform/multiplatform-ios-integration-overview.html).
 
 **Swift interop notes:**
 - Kotlin compiles to Objective-C, not Swift — use KMP-NativeCoroutines or SKIE to bridge `suspend` functions, `Flow`, and sealed classes to Swift-friendly APIs
 - Kotlin generics are partially lost in Objective-C interop; expose concrete types to Swift where possible
 
-### Desktop (JVM) Entry Point (Optional)
+### 4.4 Desktop (JVM) Entry Point (Optional)
 
-Create a module with the `kotlin.jvm`, `compose.multiplatform`, and `compose.compiler` plugins. Add a `main()` function that renders the shared Compose UI using `compose.desktop.currentOs`.
+Create a `desktopApp/` module with the `kotlin.jvm`, `compose.multiplatform`, and `compose.compiler` plugins. Wire it to the shared UI:
 
-### Web Entry Point (Optional)
+```kotlin
+// desktopApp/src/main/kotlin/Main.kt
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
 
-Create a module with `wasmJs` and/or `js` targets. Use `ComposeViewport(document.body!!)` to render the shared Compose UI in the browser. Add a minimal `index.html` in resources.
+fun main() = application {
+   Window(
+      onCloseRequest = ::exitApplication,
+      title = "MyApplication",
+   ) {
+      App()
+   }
+}
+```
+
+Add `compose.desktop.currentOs` as a dependency and register a `compose.desktop.application` block with a `mainClass`.
+
+### 4.5 Web Entry Point (Optional)
+
+Create a `webApp/` module with `wasmJs` (or `js`) target. Wire it to the shared UI:
+
+```kotlin
+// webApp/src/wasmJsMain/kotlin/Main.kt
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.window.ComposeViewport
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun main() {
+   ComposeViewport {
+      App()
+   }
+}
+```
+
+Add a minimal `index.html` in `src/webMain/resources/`.
+
+### 4.6 Verify All Platforms Build
+
+After creating entry points, build each platform app to verify the wiring is correct. Run these commands and confirm they succeed before considering Phase 4 complete.
+
+> **Note:** The examples below use `:shared`, `:app`, `:desktopApp`, and `:webApp` as module names. Substitute the actual module names from the project (e.g., `:shared-ui`, `:core:shared`, `:androidApp`).
+
+**Shared module (all targets):**
+```bash
+./gradlew :<shared-module>:build
+```
+
+**Android app:**
+```bash
+./gradlew :<android-app-module>:assembleDebug
+```
+
+**iOS app:**
+```bash
+xcodebuild \
+  -project iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' \
+  -allowProvisioningUpdates \
+  build
+```
+The `embedAndSignAppleFrameworkForXcode` Gradle task is invoked automatically by the Run Script build phase in the Xcode project — no need to build the framework separately. If the project uses a workspace (`.xcworkspace`), replace `-project` with `-workspace`. Adjust the scheme and project path to match the Xcode project.
+
+**Desktop app (if added):**
+```bash
+./gradlew :<desktop-app-module>:build
+```
+
+**Web app (if added):**
+```bash
+./gradlew :<web-app-module>:wasmJsBrowserDistribution
+```
+
+**Shared module tests (all platforms):**
+```bash
+./gradlew :<shared-module>:allTests
+```
 
 ## Verification
 
-After migration, verify with the [checklist](assets/checklist.md). Key checks:
+After the full migration (all phases), verify with the [checklist](assets/checklist.md). Key checks:
 
-1. `./gradlew build` succeeds
-2. All platform targets build: Android, iOS (`xcodebuild`), and any optional targets
-3. Shared module(s) tests pass: `./gradlew :shared:allTests`
-4. Android app runs correctly with no regressions
-5. Source sets are correctly organized (`commonMain`, `androidMain`, `iosMain`)
-6. No Android-only APIs in `commonMain` source sets
+1. All platform build commands above succeed
+2. Shared module tests pass
+3. Android app runs correctly with no regressions
+4. Source sets are correctly organized (`commonMain`, `androidMain`, `iosMain`)
+5. No Android-only APIs in `commonMain` source sets
+6. iOS app launches in the simulator and renders the shared Compose UI
 
 ## Common Issues
 
