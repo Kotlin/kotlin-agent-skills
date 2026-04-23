@@ -13,7 +13,7 @@ Migrate Kotlin Multiplatform projects from `kotlin("native.cocoapods")` to `swif
 
 ## Requirements
 
-- **Kotlin**: Version with Swift Import support (e.g., 2.4.0-Beta2 or later)
+- **Kotlin**: 2.4.0-Beta2 or later (first public release with `swiftPMDependencies` support, available on Maven Central)
 - **Xcode**: 16.4 or 26.0+
 - **iOS Deployment Target**: 16.0+ recommended
 
@@ -70,24 +70,11 @@ Before starting migration, identify the module to migrate and confirm it compile
 
 ### 1.0a Confirm Kotlin version with Swift Import support
 
-Ask the user:
+Read the current Kotlin version from `gradle/libs.versions.toml` (or `build.gradle.kts`).
 
-> Does your project already use a Kotlin version with Swift Import support (swiftPMDependencies DSL)?
+**If the project already uses Kotlin 2.4.0-Beta2 or later** → record the version and skip Phase 2.1 (no version change needed).
 
-**If yes** → read their current Kotlin version from `gradle/libs.versions.toml` (or `build.gradle.kts`), record it, and skip Phase 2.2 (no version change needed).
-
-**If no** → ask:
-
-> Please provide the Kotlin version to use (e.g., "2.4.0", "2.4.0-Beta1", "2.4.0-dev-123").
-
-Record the user-provided version. Then ask:
-
-> Does this Kotlin version require a custom Maven repository (e.g., JetBrains dev repo)?
-
-- **Yes** → ask for the repo URL (suggest `https://packages.jetbrains.team/maven/p/kt/dev` as default). Phase 2.1 will add it.
-- **No** → Phase 2.1 is skipped (no custom repo needed).
-
-Finally, check the project's current Kotlin version. Compare **major.minor** against the target. If it differs significantly (e.g., `2.1.0` → `2.4.0`), warn: "⚠️ Kotlin version jump — upgrading across minor versions can introduce breaking changes unrelated to this migration. Recommended: update first, verify it builds, then re-run." If the user confirms despite the mismatch, proceed.
+**If the project uses an older Kotlin version** → Phase 2.2 will upgrade it to `2.4.0-Beta2` (the first public release with `swiftPMDependencies` support, available on Maven Central — no custom repository needed). Warn the user: "⚠️ Kotlin version jump — upgrading across minor versions can introduce breaking changes unrelated to this migration. Recommended: update first, verify it builds, then re-run this migration." If the user confirms, proceed.
 
 ### 1.1 Check for deprecated CocoaPods workaround property
 
@@ -124,7 +111,9 @@ To inspect klib contents and verify bundled bindings, see [troubleshooting.md](r
 1. **CocoaPods configuration** - Search for `cocoapods` in `build.gradle.kts` files
 2. **Pod dependencies** - Extract pod names, versions from `cocoapods {}` blocks
 3. **Framework configuration** - Record `baseName`, `isStatic`, deployment target from `cocoapods.framework {}`
-4. **linkOnly pods** - Record pods declared with `linkOnly = true`. These pods provide native linking only — cinterop bindings come from a KMP wrapper library (e.g., `dev.gitlive:firebase-*`). See [common-pods-mapping.md](references/common-pods-mapping.md) for implications.
+4. **linkOnly pods** - Record pods declared with `linkOnly = true`. These have two common patterns:
+   - **KMP wrapper libraries** (e.g., `dev.gitlive:firebase-*`): the wrapper provides Kotlin APIs, and the pod is only linked. See [common-pods-mapping.md](references/common-pods-mapping.md) for implications.
+   - **Multi-module projects**: the consuming module declares `linkOnly = true` because a child module already provides cinterop bindings for that pod. In SwiftPM, the `swiftPackage()` declaration should go **only** in the child module that uses the pod directly. The consuming module must NOT redeclare the same packages — it only needs a `swiftPMDependencies {}` block without those packages (or an empty one if all pods were `linkOnly`). **Import namespace implication:** when the consuming module imports SPM classes that come from a child module's `swiftPMDependencies`, the import path uses the **child module's** group and name as the namespace (see Phase 4 Import Namespace Formula).
 5. **Kotlin imports** - Find all `import cocoapods.*` statements. Cross-reference with step 1.3 to identify which imports come from bundled klibs (and must be preserved) vs. which come from direct pod cinterop (and must be transformed).
 6. **Map pods to SPM** - See [common-pods-mapping.md](references/common-pods-mapping.md)
 7. **Locate iOS project directory** - Find the directory containing `Podfile` and `.xcworkspace`:
@@ -144,53 +133,33 @@ To inspect klib contents and verify bundled bindings, see [troubleshooting.md](r
 
 **Important scope note:** Do NOT upgrade the Gradle wrapper version, update KSP, or update any other dependencies during this migration. Those are separate concerns and out of scope. Only change what is listed below.
 
-### 2.1 Add custom Maven repository (if needed)
+### 2.1 Update Kotlin version
 
-**Skip this step** if the user indicated in Phase 1.0a that their Kotlin version does not require a custom Maven repository (i.e., it is an official release, Beta, or RC available from Maven Central).
+**Skip this step** if the project already uses Kotlin 2.4.0-Beta2 or later (recorded in Phase 1.0a).
 
-For dev/custom builds, add the custom Maven repository (URL from Phase 1.0a) to `settings.gradle.kts`:
-
-```kotlin
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        maven("<custom-repo-url>")  // ADD
-    }
-}
-
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven("<custom-repo-url>")  // ADD
-    }
-}
-```
-
-### 2.2 Update Kotlin version
-
-**Skip this step** if the user's project already uses a Kotlin version with Swift Import support (recorded in Phase 1.0a).
-
-Update to the version recorded in Phase 1.0a:
+Update to `2.4.0-Beta2` (or the latest available release with Swift Import support) in `gradle/libs.versions.toml`:
 
 ```toml
-# gradle/libs.versions.toml
 [versions]
-kotlin = "<kotlin-version>"
+kotlin = "2.4.0-Beta2"
 ```
 
-### 2.3 Add buildscript constraint (if swiftPMDependencies not recognized)
+`2.4.0-Beta2` is available on Maven Central — no custom repository is needed.
+
+### 2.2 Add buildscript constraint (if swiftPMDependencies not recognized)
+
+If Gradle sync completes but `swiftPMDependencies {}` is still unresolved, add a strict version constraint to force all Kotlin plugin consumers to use the same version:
 
 ```kotlin
 // root build.gradle.kts
 buildscript {
     dependencies.constraints {
-        "classpath"("org.jetbrains.kotlin:kotlin-gradle-plugin:<kotlin-version>!!")
+        "classpath"("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0-Beta2!!")
     }
 }
 ```
 
-Replace `<kotlin-version>` with the version recorded in Phase 1.0a. The `!!` suffix forces strict version resolution, ensuring no other dependency pulls in a different Kotlin Gradle plugin version.
+The `!!` suffix forces strict version resolution, ensuring no other dependency pulls in a different Kotlin Gradle plugin version.
 
 ---
 
@@ -210,15 +179,21 @@ group = "org.example.myproject"  // Required for import namespace
 
 For each pod dependency, add the equivalent SwiftPM package declaration. Use [common-pods-mapping.md](references/common-pods-mapping.md) to map each pod to its SPM package URL, product name, and `importedClangModules`.
 
-**Version preservation:** Match the version constraint semantics from the `cocoapods {}` block. Using `from()` for an exact CocoaPods version can resolve to a newer version that breaks cinterop APIs (removed symbols, changed signatures).
+**Version preservation:** Do NOT bump dependency versions during migration. Use the exact same version that was specified in the `cocoapods {}` block. Changing versions can resolve to different library builds that break cinterop APIs (removed symbols, changed signatures) and introduce issues unrelated to the migration itself.
 
 | CocoaPods version spec | SPM equivalent | Example |
 |------------------------|---------------|---------|
-| `version = "1.2.3"` (exact) | `exact("1.2.3")` | `pod("GoogleMaps") { version = "10.3.0" }` → `exact("10.3.0")` |
-| `version = "~> 1.2"` (optimistic) | `from("1.2.0")` | `pod("FirebaseAuth") { version = "~> 12.5" }` → `from("12.5.0")` |
-| No version specified | `exact()` with latest, or ask user | Ask the user which version to pin |
+| `version = "1.2.3"` (exact) | `version = "1.2.3"` (simple) or `exact("1.2.3")` (typed) | `pod("GoogleMaps") { version = "10.3.0" }` → `version = "10.3.0"` |
+| `version = "~> 1.2"` (optimistic) | `version = "1.2.0"` (simple) or `from("1.2.0")` (typed) | `pod("FirebaseAuth") { version = "~> 12.5" }` → `version = "12.5.0"` |
+| No version specified | Ask user which version to pin | Ask the user which version to use |
 
-**Key concepts:** `products` = SPM product names (controls linking). `importedClangModules` = Clang module names for cinterop bindings (only when `discoverModulesImplicitly = false`). `discoverModulesImplicitly` defaults to `true` (bindings for all Clang modules); set `false` when transitive C/C++ modules fail cinterop (Firebase, gRPC), then list needed modules explicitly.
+**Two API forms:** The DSL has a simple string API and a typed API. **Use the simple string API** for most packages:
+```kotlin
+swiftPackage(url = "https://github.com/owner/repo.git", version = "1.0.0", products = listOf("ProductName"))
+```
+The simple API auto-defaults `importedClangModules` to the `products` list. Use the typed API (with `url()`, `exact()`, `product()` wrappers) only when you need exact version pinning, platform constraints, or explicit Clang module control. See [dsl-reference.md](references/dsl-reference.md) for the typed API.
+
+**Key concepts:** `products` = SPM product names (controls linking). `importedClangModules` = Clang module names for cinterop bindings (only when `discoverClangModulesImplicitly = false`). `discoverClangModulesImplicitly` defaults to `true` (bindings for all Clang modules); set `false` when transitive C/C++ modules fail cinterop (Firebase, gRPC), then list needed modules explicitly.
 
 **Important:** SPM product names and Clang module names don't always match. Always consult [common-pods-mapping.md](references/common-pods-mapping.md) for correct values.
 
@@ -234,12 +209,12 @@ kotlin {
     iosX64()
 
     swiftPMDependencies {
-        iosMinimumDeploymentTarget.set("16.0")
+        iosMinimumDeploymentTarget = "16.0"
 
         swiftPackage(
-            url = url("https://github.com/owner/repo.git"),
-            version = from("1.0.0"),
-            products = listOf(product("ProductName")),
+            url = "https://github.com/owner/repo.git",
+            version = "1.0.0",
+            products = listOf("ProductName"),
         )
     }
 
@@ -271,7 +246,17 @@ If the project uses `dev.gitlive:firebase-*` or similar KMP wrapper libraries, t
 
 See [common-pods-mapping.md](references/common-pods-mapping.md) § dev.gitlive and [troubleshooting.md](references/troubleshooting.md) for code snippets and the full product list.
 
-### 3.5 Add opt-in for cinterop API
+### 3.5 Add opt-in annotations
+
+The `swiftPackage()` and `localSwiftPackage()` DSL functions are annotated with `@ExperimentalKotlinGradlePluginApi`. Add this opt-in to suppress the compiler warning:
+
+```kotlin
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+```
+
+Place this at the top of each `build.gradle.kts` file that calls `swiftPackage()` or `localSwiftPackage()`.
+
+Also add the cinterop opt-in for Kotlin source files:
 
 ```kotlin
 kotlin.compilerOptions {
@@ -291,12 +276,14 @@ For full DSL reference, see [dsl-reference.md](references/dsl-reference.md).
 swiftPMImport.<group>.<module>.<ClassName>
 
 Where:
-- group: build.gradle.kts `group` property, dashes (-) → dots (.)
-- module: Gradle module name, dashes (-) → dots (.), underscores (_) preserved as-is
+- group: build.gradle.kts `group` property of the MODULE THAT DECLARES the swiftPMDependencies, dashes (-) → dots (.)
+- module: Gradle module name of the MODULE THAT DECLARES the swiftPMDependencies, dashes (-) → dots (.), underscores (_) preserved as-is
 - ClassName: Objective-C class name (FIR* for Firebase, GMS* for Google Maps)
 ```
 
-### Example Transformation
+**The namespace uses the declaring module's group+name, not the importing module's.** This is the most common mistake agents make. When module A depends on module B, and module B declares `swiftPMDependencies`, module A imports SPM classes using module B's group and module name — NOT module A's.
+
+### Example Transformation — Single Module
 
 ```kotlin
 // group = "org.jetbrains.kotlin.firebase.sample", module = "kotlin-library"
@@ -307,6 +294,26 @@ import cocoapods.FirebaseAnalytics.FIRAnalytics
 // AFTER:
 import swiftPMImport.org.jetbrains.kotlin.firebase.sample.kotlin.library.FIRAnalytics
 ```
+
+### Example Transformation — Multi-Module (linkOnly pods)
+
+When a consuming module had `pod("GoogleMaps") { linkOnly = true }` because a child module provides the cinterop bindings:
+
+```kotlin
+// composeApp/App.kt — composeApp depends on :google-maps Gradle module
+// google-maps has group = "org.jetbrains.kotlin.google-maps", module name = "google-maps"
+// google-maps declares swiftPMDependencies with GoogleMaps
+
+// BEFORE (in composeApp):
+import cocoapods.GoogleMaps.GMSServices
+
+// AFTER — uses google-maps module's namespace, NOT composeApp's namespace:
+import swiftPMImport.org.jetbrains.kotlin.google.maps.google.maps.GMSServices
+//                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^
+//                    google-maps's group (dashes→dots)  google-maps's module name (dashes→dots)
+```
+
+The import path does NOT use composeApp's group (`org.jetbrains.kotlin.compose.sample`). It uses the declaring module's identity because that's where the cinterop bindings are generated.
 
 **Import flattening:** The Clang module name (e.g., `FirebaseFirestoreInternal`, `FirebaseAuth`) disappears from the import path — all classes are flattened under the same `swiftPMImport.<group>.<module>` prefix regardless of which library they come from. For example, both `cocoapods.FirebaseAuth.FIRAuth` and `cocoapods.FirebaseFirestoreInternal.FIRFirestore` become `swiftPMImport.<group>.<module>.FIRAuth` and `swiftPMImport.<group>.<module>.FIRFirestore`.
 
@@ -322,11 +329,11 @@ import cocoapods.FirebaseMessaging.FIRMessaging
 
 ### Bulk Replacement
 
-Use a regex find-and-replace across all Kotlin source files, **excluding imports identified in Phase 1 step 1.3**:
+Use a regex find-and-replace across all Kotlin source files, **excluding imports identified in Phase 1 step 1.3**. In multi-module projects, run the replacement separately for each module using that module's group and name:
 
 ```
 Find:    cocoapods\.\w+\.
-Replace: swiftPMImport.<your.group>.<your.module>.
+Replace: swiftPMImport.<declaring.module.group>.<declaring.module.name>.
 ```
 
 After bulk replacement, **manually restore** any `cocoapods.*` imports that should be preserved (from bundled klibs).
@@ -356,7 +363,7 @@ Run this command. It modifies the `.xcodeproj` to trigger `embedAndSignAppleFram
 
 **Verify `embedAndSignAppleFrameworkForXcode` is active:** After running integration, check the build phase script in `project.pbxproj`. If `embedAndSignAppleFrameworkForXcode` is commented out (prefixed with `#`), uncomment it.
 
-The `integrateLinkagePackage` task generates `_internal_linkage_SwiftPMImport/` at `<iosDir>/` — a local Swift package that mirrors your `products` list and ensures SPM libraries are linked into the final binary.
+The `integrateLinkagePackage` task generates `KotlinMultiplatformLinkedPackage/` at `<iosDir>/` — a local Swift package that mirrors your `products` list and ensures SPM libraries are linked into the final binary.
 
 After running the integration tasks, **disable User Script Sandboxing** (`ENABLE_USER_SCRIPT_SANDBOXING = NO`) in the `.xcodeproj`. Xcode 16+ enables it by default, which prevents the Gradle build phase from writing to the project directory:
 
@@ -427,11 +434,20 @@ Now that the iOS project is reconfigured, remove the CocoaPods plugin and block 
 
 ### 6.1 Remove CocoaPods plugin
 
+Remove `kotlin("native.cocoapods")` or `alias(libs.plugins.kotlinCocoapods)` from `plugins {}` in every module that used it:
+
 ```kotlin
 plugins {
-    // REMOVE: kotlin("native.cocoapods")
+    // REMOVE: kotlin("native.cocoapods")  or  alias(libs.plugins.kotlinCocoapods)
     alias(libs.plugins.kotlinMultiplatform)  // Keep
 }
+```
+
+If all modules have been migrated, also remove the `kotlinCocoapods` plugin entry from `gradle/libs.versions.toml`:
+
+```toml
+[plugins]
+# REMOVE: kotlinCocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 ```
 
 ### 6.2 Remove cocoapods block
