@@ -39,10 +39,9 @@ jobs:
           # not changes from other PRs merged into main since the branch diverged
           MERGE_BASE=$(git merge-base $BASE $HEAD)
 
-          # Find changed SKILL.md files and extract skill directories
+          # Find changed skill files and extract skill directories
           SKILLS=$(git diff --name-only $MERGE_BASE $HEAD | \
-            grep 'SKILL.md$' | \
-            xargs -I {} dirname {} | \
+            awk -F/ '/^skills\/[^/]+\// { print $1 "/" $2 }' | \
             sort -u | \
             jq -R -s -c 'split("\n") | map(select(length > 0))')
 
@@ -93,6 +92,14 @@ jobs:
           fi
           
           echo "Directory name validation passed."
+
+      - name: Run skill-specific validation for ${{ matrix.skill }}
+        run: |
+          if [ -f "${{ matrix.skill }}/scripts/validate.py" ]; then
+            python3 "${{ matrix.skill }}/scripts/validate.py" "${{ matrix.skill }}"
+          else
+            echo "No skill-specific validation script found."
+          fi
 
       - name: Validate ${{ matrix.skill }}
         uses: Flash-Brew-Digital/validate-skill@v1
