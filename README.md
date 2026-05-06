@@ -38,11 +38,11 @@ See [npx skills](https://github.com/vercel-labs/skills) for more options.
 ### Claude Code
 
 ```sh
-/plugin marketplace add Kotlin/kotlin-agent-skills
+claude plugin marketplace add Kotlin/kotlin-agent-skills
 ```
 
 ```sh
-/plugin install kotlin-agent-skills@Kotlin
+claude plugin install kotlin-agent-skills@Kotlin
 ```
 
 ### Codex
