@@ -1,0 +1,23 @@
+{
+    "name": "kotlin-agent-skills",
+    "version": "1.0.0",
+    "description": "AI agent skills for Kotlin projects.",
+    "author": {
+        "name": "Kotlin",
+        "url": "https://kotlinlang.org/"
+    },
+    "homepage": "https://github.com/Kotlin/kotlin-agent-skills",
+    "repository": "https://github.com/Kotlin/kotlin-agent-skills",
+    "license": "Apache-2.0",
+    "keywords": ["kotlin"],
+    "interface": {
+        "displayName": "Kotlin skills for agents",
+        "shortDescription": "Reusable skills for software development using Kotlin.",
+        "longDescription": "Reusable skills for software development using Kotlin.",
+        "developerName": "JetBrains",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://kotlinlang.org/"
+    },
+    "skills": "./skills"
+}
