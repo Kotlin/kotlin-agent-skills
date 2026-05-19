@@ -1,5 +1,5 @@
 ---
-name: compose-ui
+name: kotlin-ui-compose-design
 description: Create distinctive, production-grade Compose Multiplatform interfaces with high design quality. Use this skill when the user asks to build composables, screens, components, or applications in Compose or Jetpack Compose (examples include Android screens, multiplatform apps, dashboards, onboarding screens, Material 3 designs, or when styling/beautifying any Compose UI). Generates creative, polished Kotlin code that avoids Material defaults and generic AI aesthetics.
 ---
 
