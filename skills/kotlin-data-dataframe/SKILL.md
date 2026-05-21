@@ -26,11 +26,11 @@ A skill for using **kotlinx.dataframe**, the JetBrains-maintained type-safe tabu
 
 The same DataFrame operation can be written in three different styles depending on context:
 
-| Context | Schema awareness | Idiomatic syntax |
-|---|---|---|
-| **Kotlin Notebook** (Jupyter / Kotlin kernel) | Auto-generated **after each cell** runs | `df.columnName` works once the cell that creates `df` has run |
+| Context                                                     | Schema awareness                                      | Idiomatic syntax                                                                                     |
+|-------------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| **Kotlin Notebook** (Jupyter / Kotlin kernel)               | Auto-generated **after each cell** runs               | `df.columnName` works once the cell that creates `df` has run                                        |
 | **Gradle + compiler plugin** (`kotlin("plugin.dataframe")`) | Inferred **at compile time** through operation chains | `df.columnName` works inline; schema updates flow through chains but not across variable assignments |
-| **Gradle / plain Kotlin without plugin** | None — String API only | `df["columnName"]` and `it["columnName"]` everywhere; type casts required |
+| **Gradle / plain Kotlin without plugin**                    | None — String API only                                | `df["columnName"]` and `it["columnName"]` everywhere; type casts required                            |
 
 Before writing code, **determine which context the user is in**. If unclear, ask. Wrong context = code that won't compile or won't be idiomatic. Look for:
 - `.ipynb` files or `%use dataframe` → notebook
@@ -70,22 +70,22 @@ df
     .sortByDesc { "fullName"<String>() }
 ```
 
-### The schema-flows-in-chains-only rule
+### DataFrames are immutable — every operation returns a new instance
 
-Schema refinement only propagates **within a single expression**. Assigning to a `val` freezes the type:
+This is the most common source of confusion, and it's not really a plugin behaviour — it's plain Kotlin immutability. Every operation on a DataFrame returns a *new* DataFrame; the input is never modified. The compiler plugin then assigns each resulting expression its own schema (and therefore its own set of extension properties). A `val` is bound to one specific DataFrame instance with one specific type; later operations on it produce *more* DataFrames with their own types — they cannot retroactively change the original variable:
 
 ```kotlin
 val df1 = dataFrameOf("a")(1, 2, 3)
-df1.a                  // OK
+df1.a                  // OK — df1 has column 'a'
 
 val df2 = df1.add("b") { a * 2 }
-df2.a                  // OK
-df2.b                  // OK — schema includes 'b'
+df2.a                  // OK — df2 is a brand new DataFrame with 'a' and 'b'
+df2.b                  // OK
 
-df1.b                  // ERROR — df1's type was fixed at its declaration
+df1.b                  // ERROR — df1 was never modified; only df2 has 'b'
 ```
 
-If a column accessor is missing where you expect one, check whether the chain was broken by an intermediate variable.
+The schema only appears to "flow" inside a single chained expression because each intermediate `.add()`/`.rename()`/etc. result is a fresh DataFrame whose type the plugin can determine on the spot. If a column accessor is missing where you expect one, the user likely split a chain across a `val` that doesn't yet have that column.
 
 ### What the plugin does NOT analyze
 
@@ -305,7 +305,7 @@ df.schema().print()         // just the schema
 
 ## Critical gotchas
 
-1. **Schema doesn't cross `val` boundaries.** If `df.b` works inline but not after assignment, the user split the chain. Either keep the chain together, or add `@DataSchema` and `convertTo<>()` at the assignment point.
+1. **Operations on a `val` don't update that `val`.** DataFrame is immutable: `df.add("b") {...}` returns a *new* DataFrame, leaving the original unchanged. If a column accessor is missing where you expect it, the user likely split a chain mid-way; either keep the chain together, or declare a `@DataSchema` for the intermediate variable so its type carries the new columns. Don't try to pattern-match against pandas here — there is no in-place mutation, no `inplace=True`, no chained assignment.
 
 2. **`kotlin.incremental=false` is mandatory** for the compiler plugin. Symptoms when missing: spurious "unresolved reference" errors on column names that resolve fine after `./gradlew clean build`.
 
@@ -315,9 +315,7 @@ df.schema().print()         // just the schema
 
 5. **DslMarker-receiver lambdas break extension properties.** Inside a `@DslMarker`-receiver lambda (notably Jetpack Compose builders like `Column { }`), DataFrame's generated extension properties don't resolve. Construct/transform the DataFrame outside the lambda and only consume it inside.
 
-6. **Don't pattern-match against pandas.** DataFrame is immutable; every operation returns a new DataFrame. There is no in-place mutation, no `inplace=True`, no chained assignment.
-
-7. **`df.print()` ≠ display.** In Gradle, `df.print()` writes a plain text table to stdout; the rich HTML rendering is notebook-only unless you explicitly call `df.toHtml()`.
+6. **`df.print()` ≠ display.** In Gradle, `df.print()` writes a plain text table to stdout; the rich HTML rendering is notebook-only unless you explicitly call `df.toHtml()`.
 
 ## When to fall back to the String API
 
