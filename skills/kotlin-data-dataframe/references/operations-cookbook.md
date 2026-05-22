@@ -307,10 +307,6 @@ df.dropNA { age }                                   // also treat NaN as missing
 df.fillNulls { age }.with { 0 }
 df.fillNA { age }.with { 0.0 }
 df.fillNulls { colsOf<Int>() }.with { 0 }
-
-df.nullColumnNames()
-df.anyNulls { age }
-df.allNotNulls()
 ```
 
 ## I/O extras not in SKILL.md
@@ -327,7 +323,6 @@ DataFrame.readJson("data.json")                     // arrays → FrameColumn
 // SQL — see dataframe-jdbc module
 DataFrame.readSqlTable(connection, "users", limit = 1000)
 DataFrame.readSqlQuery(connection, "SELECT id, name FROM users WHERE active = true")
-df.writeSqlTable(connection, "users", ifExists = SqlIfExists.Replace)
 
 // Arrow / Parquet — see dataframe-arrow module
 DataFrame.readArrowFeather("data.arrow")

@@ -92,7 +92,8 @@ The schema only appears to "flow" inside a single chained expression because eac
 These operations depend on runtime data and cannot have their result schemas inferred by the plugin. The plugin leaves them with a "lost" schema; you must either provide a `@DataSchema` to `convertTo<>()` or fall back to the String API afterwards:
 
 - `read*` family (`readCsv`, `readJson`, `readExcel`, `readSqlTable`) — schema lives in the file
-- `pivot`, `gather`, `parse`, `split`, `implode` — output columns depend on data values
+- `pivot`, `parse` — output columns (or their types) depend on data values
+- `split` — works for a handful of cases, like when exact new names are provided, not when defining the new names programmatically
 - Some `filter` overloads in special scopes
 
 ### Setup recipe (Gradle + plugin)
@@ -165,14 +166,18 @@ data class Row(
 
 ### Generating a schema from existing data
 
-In a notebook: run `df.generateDataClasses()` (or `df.generateInterfaces()`) and copy the output into your Gradle project.
-Alternatively, create a separate file with `main()` function where you `.print()` the
-generated code.
+Create a separate file with `main()` function:
+run `df.generateDataClasses()` (or `df.generateInterfaces()`), `.print()` and copy the output into your project.
+Alternatively, in a notebook: run `df.generateDataClasses()` (or `df.generateInterfaces()`) and copy the output into your Gradle project.
 
 ## Construction
 
+`dataFrameOf("name" to columnOf(...), ...)` is the recommended way to define a dataframe,
+but there are a few alternatives:
+
 ```kotlin
-// 0. Map-style, accepts either lists or columns as values
+// 0. Map-style, accepts either lists or columns as values.
+
 // DataFrame with 2 columns and 3 rows
 val df = dataFrameOf(
   "name" to listOf("Alice", "Bob", "Charlie"),
