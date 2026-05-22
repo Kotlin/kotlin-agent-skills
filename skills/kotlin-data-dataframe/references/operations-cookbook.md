@@ -87,7 +87,7 @@ df.add {
 
 // Reference previously-added columns in the same block
 df.add {
-    "tax"   from { price * 0.21 }
+    "tax" from { price * 0.21 }
     "total" from { price + "tax"<Double>() }
 }
 
@@ -102,7 +102,7 @@ df.update { age }.at(2, 5, 7).with { -1 }         // multiple rows
 df.update { name }.notNull().with { it.uppercase() }
 df.update { age }.perRowCol { row, col -> col[row] ?: 0 }
 df.fillNulls { age }.with { 0 }
-df.fillNA   { age }.with { 0 }                    // also handles NaN
+df.fillNA { age }.with { 0 }                    // handles NaN and null
 ```
 
 `update` returns a new DataFrame — DataFrame is immutable.
@@ -124,8 +124,8 @@ df.renameToSnakeCase()
 df.convert { age }.to<Long>()                     // primitive
 df.convert { price }.to<BigDecimal>()
 df.convert { "amount" }.to<Double>()
-df.convert { dateStr }.toLocalDate("yyyy-MM-dd")
-df.convert { dateStr }.toLocalDateTime("yyyy-MM-dd HH:mm:ss")
+df.convert { dateStr }.toLocalDate("yyyy-MM-dd") // requires @OptIn(FormatStringsInDatetimeFormats::class)
+df.convert { dateStr }.toLocalDateTime("yyyy-MM-dd HH:mm:ss") // requires @OptIn(FormatStringsInDatetimeFormats::class)
 df.convert { categoryStr }.to<Category>()         // String → enum
 df.convert { json }.with { Json.decodeFromString<MyType>(it) }
 df.parse()                                        // auto-parse all String columns
@@ -157,7 +157,7 @@ df.groupBy { city }.last()
 // Custom aggregate
 df.groupBy { city }.aggregate {
     mean { age }              into "avgAge"
-    sum  { revenue }          into "totalRevenue"
+    sum { revenue }           into "totalRevenue"
     count()                   into "rowCount"
     maxBy { age }.name        into "oldestPerson"
 }
@@ -201,10 +201,10 @@ df.explode { events }                                       // for FrameColumn
 ## Joining
 
 ```kotlin
-df1.innerJoin(df2)    { id }                       // join on matching column name
-df1.leftJoin(df2)     { id }
-df1.rightJoin(df2)    { id }
-df1.fullJoin(df2)     { id }
+df1.innerJoin(df2) { id }                       // join on matching column name
+df1.leftJoin(df2) { id }
+df1.rightJoin(df2) { id }
+df1.fullJoin(df2) { id }
 
 // Multi-column join
 df1.innerJoin(df2) { firstName and lastName }
@@ -213,8 +213,8 @@ df1.innerJoin(df2) { firstName and lastName }
 df1.innerJoin(df2) { id match right.userId }
 
 // Filter (semi/anti) joins
-df1.filterJoin(df2)   { id }                       // keep rows in df1 that match
-df1.excludeJoin(df2)  { id }                       // keep rows in df1 that don't match
+df1.filterJoin(df2) { id }                       // keep rows in df1 that match
+df1.excludeJoin(df2) { id }                       // keep rows in df1 that don't match
 
 // Cross join
 df1.crossJoin(df2)
@@ -227,7 +227,7 @@ A `ColumnGroup` is a sub-DataFrame as a column (every cell has the same nested s
 ```kotlin
 // Navigate into a group
 df.select { person.firstName }
-df.select { person.{ firstName and lastName } }    // multiple from a group
+df.select { person { firstName and lastName } }    // multiple from a group
 
 // Build a group from flat columns
 df.group { firstName and lastName }.into("name")
@@ -264,14 +264,14 @@ df.add("rowDf") { it }                             // capture the DataRow itself
 These can be called on a whole DataFrame, a single column, or inside an aggregate:
 
 ```kotlin
-df.mean   { age }
+df.mean { age }
 df.median { age }
-df.std    { age }
-df.min    { age }
-df.max    { age }
-df.sum    { revenue }
+df.std { age }
+df.min { age }
+df.max { age }
+df.sum { revenue }
 df.count()
-df.count  { age > 18 }                             // with predicate
+df.count { age > 18 }                             // with predicate
 
 df.describe()                                       // summary stats DataFrame
 df.describe { age and salary }                      // only selected columns
@@ -305,7 +305,7 @@ df.dropNulls { age }                                // only check age
 df.dropNA { age }                                   // also treat NaN as missing
 
 df.fillNulls { age }.with { 0 }
-df.fillNA    { age }.with { 0.0 }
+df.fillNA { age }.with { 0.0 }
 df.fillNulls { colsOf<Int>() }.with { 0 }
 
 df.nullColumnNames()
@@ -338,6 +338,6 @@ df.writeArrowFeather("out.arrow")
 
 1. Keep the pipeline as one expression when you want the plugin's schema flow.
 2. If you must break for readability, use `convertTo<Schema>()` at each break point.
-3. Use `also { println(it.schema()) }` mid-chain when debugging — it's a no-op on data.
-4. `df.print()` inside a chain works as a debug probe: `.also { it.print() }`.
+3. Use `.also { it.schema().print() }` or `.also { it.print() }` mid-chain when debugging — it's a no-op on data.
+4. Inside the IDE, you can hover over each function call with an adjusted return type, and the info warning will tell you about the schema.
 5. For very long pipelines, define `@DataSchema` interfaces for each major stage; they document intent and let you split the chain safely.

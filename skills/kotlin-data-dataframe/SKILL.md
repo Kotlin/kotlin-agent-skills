@@ -100,8 +100,8 @@ These operations depend on runtime data and cannot have their result schemas inf
 ```kotlin
 // build.gradle.kts
 plugins {
-    kotlin("jvm") version "2.2.20"
-    kotlin("plugin.dataframe") version "2.2.20"   // must match Kotlin version
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.dataframe") version "2.3.20"   // must match Kotlin version, use newest Kotlin version available
 }
 
 dependencies {
@@ -115,6 +115,7 @@ kotlin.incremental=false
 ```
 
 Without `kotlin.incremental=false`, the plugin's generated schemas can go stale between builds and you'll get "unresolved reference: columnName" errors that disappear after a clean build. **Always include this line.**
+This is likely solved in Kotlin 2.4+.
 
 IDE support for inline schema hovers and completion requires IntelliJ IDEA 2025.2+ with Kotlin 2.2.20+.
 
@@ -133,7 +134,7 @@ Same dependency, no plugin. You're restricted to the String API: `df["col"]`, `i
 
 ## `@DataSchema` — declaring schemas explicitly
 
-When data comes from a file (CSV, JSON, SQL), the plugin can't read it at compile time. Declare the expected shape with `@DataSchema` and use `convertTo<>()` to thread it through:
+When data comes from a file (CSV, JSON, SQL), the plugin can't read it at compile time. Declare the expected shape with `@DataSchema` and use `convertTo<>()` or `cast<>()` to thread it through:
 
 ```kotlin
 @DataSchema
@@ -164,11 +165,28 @@ data class Row(
 
 ### Generating a schema from existing data
 
-In a notebook: run `df.generateCode()` (or `df.generateInterfaces()`) and copy the output into your Gradle project.
+In a notebook: run `df.generateDataClasses()` (or `df.generateInterfaces()`) and copy the output into your Gradle project.
+Alternatively, create a separate file with `main()` function where you `.print()` the
+generated code.
 
 ## Construction
 
 ```kotlin
+// 0. Map-style, accepts either lists or columns as values
+// DataFrame with 2 columns and 3 rows
+val df = dataFrameOf(
+  "name" to listOf("Alice", "Bob", "Charlie"),
+  "age" to listOf(15, 20, 100),
+)
+// DataFrame with 2 columns and 3 rows (name is a column group)
+val df = dataFrameOf(
+  "name" to columnOf(
+    "firstName" to columnOf("Alice", "Bob", "Charlie"),
+    "lastName" to columnOf("Cooper", "Dylan", "Daniels"),
+  ),
+  "age" to columnOf(15, 20, 100),
+)
+
 // 1. By columns (vararg of values, count must be divisible by column count)
 val df = dataFrameOf("name", "age")(
     "Alice", 30,
@@ -220,12 +238,13 @@ df.rename { age }.into("years")
 df.renameToCamelCase()
 
 // Convert types
-df.convert { dateStr }.toLocalDate("yyyy-MM-dd")
 df.convert { "amount" }.to<Double>()
+@OptIn(FormatStringsInDatetimeFormats::class)
+df.convert { dateStr }.toLocalDate("yyyy-MM-dd")
 
 // Drop columns
 df.remove { age }
-df.select { all().except { age } }      // by exclusion
+df.select { all().except { age } }      // by exclusion (compiler plugin support for `except` likely requires Kotlin 2.5+)
 
 // Group + aggregate
 df.groupBy { city }.mean { age }
@@ -249,7 +268,7 @@ For the full operations list, see `references/operations-cookbook.md`.
 DataFrame's IO is split into modules. The main `dataframe` artifact pulls them in transitively, but if you depend only on `dataframe-core`, add format modules explicitly.
 
 ```kotlin
-// CSV (dataframe-csv)
+// CSV/TSV (dataframe-csv) (+ dataframe-json if your CSV contains JSON to parse)
 DataFrame.readCsv("data.csv")
 DataFrame.readCsv(URL("https://example.com/data.csv"))
 df.writeCsv("out.csv")
@@ -266,13 +285,20 @@ df.writeExcel("out.xlsx")
 // SQL (dataframe-jdbc)
 DataFrame.readSqlTable(connection, "users")
 DataFrame.readSqlQuery(connection, "SELECT * FROM users WHERE age > 18")
+
+// Arrow (dataframe-arrow)
+DataFrame.readArrowFeather(file) // and similar for IPC, Parquet (which takes vararg arguments)
+DataFrame.readArrow(arrowReader)
+df.writeArrowIPC(file)
+df.writeArrowFeather(file)
+
 ```
 
 In a notebook, the corresponding `%use` integrations are included automatically. In Gradle, all the above ship under `org.jetbrains.kotlinx:dataframe`; only when you slim down to `dataframe-core` do you need to add format-specific modules.
 
 ## Hierarchical / nested data
 
-`DataFrame` supports `ColumnGroup` (a sub-DataFrame as a column) and `FrameColumn` (a column whose cells are themselves DataFrames). JSON with nested objects/arrays naturally produces these.
+`DataFrame` supports `ColumnGroup` (a sub-DataFrame as a column) and `FrameColumn` (a column whose cells are themselves DataFrames). JSON with nested objects/arrays naturally produces these. `FrameColumn`s cannot contain nulls. A `ValueColumn<DataFrame<>?>` is possible though.
 
 ```kotlin
 // Navigate into a group
@@ -307,11 +333,11 @@ df.schema().print()         // just the schema
 
 1. **Operations on a `val` don't update that `val`.** DataFrame is immutable: `df.add("b") {...}` returns a *new* DataFrame, leaving the original unchanged. If a column accessor is missing where you expect it, the user likely split a chain mid-way; either keep the chain together, or declare a `@DataSchema` for the intermediate variable so its type carries the new columns. Don't try to pattern-match against pandas here — there is no in-place mutation, no `inplace=True`, no chained assignment.
 
-2. **`kotlin.incremental=false` is mandatory** for the compiler plugin. Symptoms when missing: spurious "unresolved reference" errors on column names that resolve fine after `./gradlew clean build`.
+2. **`kotlin.incremental=false` is mandatory** for the compiler plugin. Symptoms when missing: spurious "unresolved reference" errors on column names that resolve fine after `./gradlew clean build`. This is likely solved in Kotlin 2.4+.
 
-3. **Plugin can't read files at compile time.** The old KSP-based `@ImportDataSchema` is gone in Kotlin 2.3+. Use one of: declare `@DataSchema` manually, generate it once in a notebook with `df.generateCode()`, or just use the String API after `readCsv`.
+3. **Plugin can't read files at compile time.** The old KSP-based `@ImportDataSchema` is gone in DataFrame 1.0.0-Beta5+. Use one of: declare `@DataSchema` manually, generate it once in a notebook/function with `df.generateCode()`, or just use the String API after `readCsv`.
 
-4. **Pivot/gather/parse return runtime schemas.** After these, the plugin's accessors are gone; either `convertTo<>()` into a declared schema or use String access.
+4. **Pivot/gather/parse return runtime schemas.** After these, the plugin's accessors are gone; either `convertTo<>()` or `cast<>()` into a declared schema or use String access.
 
 5. **DslMarker-receiver lambdas break extension properties.** Inside a `@DslMarker`-receiver lambda (notably Jetpack Compose builders like `Column { }`), DataFrame's generated extension properties don't resolve. Construct/transform the DataFrame outside the lambda and only consume it inside.
 
