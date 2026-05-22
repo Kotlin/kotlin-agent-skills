@@ -1,17 +1,11 @@
 ---
 name: kotlin-data-dataframe
 description: >
-  Write idiomatic Kotlin DataFrame code (kotlinx.dataframe), with correct
-  handling of its compiler plugin's deviations from normal Kotlin syntax.
-  Use this skill whenever the user works with the Kotlin DataFrame library —
-  reading, transforming, or analyzing tabular data with constructs like
-  `dataFrameOf`, `DataFrame.readCsv`/`readJson`/`readExcel`/`readSqlTable`,
-  the `@DataSchema` annotation, the `kotlin("plugin.dataframe")` Gradle plugin,
-  Kotlin Jupyter notebooks loaded via `%use dataframe`, or any project depending
-  on `org.jetbrains.kotlinx:dataframe`. Also trigger on questions about
-  extension-property column accessors (`df.columnName`), schema
-  inference/refinement, or unexpected "unresolved reference" errors involving
-  DataFrame columns.
+  Use for Kotlin DataFrame (`kotlinx.dataframe`) tasks — reading,
+  transforming, or analyzing tabular data in Kotlin. Trigger on mentions
+  of `DataFrame`, `dataFrameOf`, `readCsv`/`readJson`/`readExcel`,
+  `@DataSchema`, extension-property column accessors like `df.columnName`,
+  or "unresolved reference" errors on DataFrame columns.
 license: Apache-2.0
 metadata:
   author: JetBrains
