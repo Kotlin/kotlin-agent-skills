@@ -1,11 +1,11 @@
 ---
 name: kotlin-data-dataframe
 description: >
-Use for Kotlin DataFrame (`kotlinx.dataframe`) tasks — reading,
-transforming, or analyzing tabular data in Kotlin. Trigger on mentions
-of `DataFrame`, `dataFrameOf`, `readCsv`/`readJson`/`readExcel`,
-`@DataSchema`, extension-property column accessors like `df.columnName`,
-or "unresolved reference" errors on DataFrame columns.
+  Use for Kotlin DataFrame (`kotlinx.dataframe`) tasks — reading,
+  transforming, or analyzing tabular data in Kotlin. Trigger on mentions
+  of `DataFrame`, `dataFrameOf`, `readCsv`/`readJson`/`readExcel`,
+  `@DataSchema`, extension-property column accessors like `df.columnName`,
+  or "unresolved reference" errors on DataFrame columns.
 license: Apache-2.0
 metadata:
 author: JetBrains
