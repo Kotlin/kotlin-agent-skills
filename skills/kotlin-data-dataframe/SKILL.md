@@ -262,14 +262,7 @@ The String API (`df["name"]`, `it["name"]`, with casts) is always available. Use
 - Inside a `@DslMarker`-receiver lambda where extension properties don't resolve.
 Mixing both styles in one program is fine and common.
 ## Where to look for more
-- Library home: <https://kotlin.github.io/dataframe/home.html>
-- Quickstart: <https://kotlin.github.io/dataframe/quickstart.html>
-- Compiler plugin: <https://kotlin.github.io/dataframe/compiler-plugin.html>
-- Extension properties: <https://kotlin.github.io/dataframe/extensionpropertiesapi.html>
-- Schemas: <https://kotlin.github.io/dataframe/schemas.html>
-- Operations reference: <https://kotlin.github.io/dataframe/operations.html>
-- Reading data: <https://kotlin.github.io/dataframe/read.html>
-- SQL: <https://kotlin.github.io/dataframe/readSqlDatabases.html>
-- Notebook setup: <https://kotlin.github.io/dataframe/setupkotlinnotebook.html>
-- Gradle setup: <https://kotlin.github.io/dataframe/setupgradle.html>
-- Source: <https://github.com/Kotlin/dataframe>
+- Library home: <https://kotlin.github.io/dataframe>
+- `llms.txt` index file: <https://kotlin.github.io/dataframe/llms.txt>
+- `llms-full.txt`: <https://kotlin.github.io/dataframe/llms-full.txt>
+- Source code: <https://github.com/Kotlin/dataframe>
