@@ -68,7 +68,7 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:dataframe:1.0.0")  // check latest
+    implementation("org.jetbrains.kotlinx:dataframe:1.0.0-Beta5")  // check latest on Maven Central
 }
 ```
 ```properties
