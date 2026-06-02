@@ -13,6 +13,15 @@ version: "1.0.0"
 ---
 # Kotlin DataFrame
 A skill for using **kotlinx.dataframe**, the JetBrains-maintained type-safe tabular data library for Kotlin.
+## Required imports
+```kotlin
+import org.jetbrains.kotlinx.dataframe.api.* // filter, groupBy, aggregate, sortBy, take, explode, columnOf, dataFrameOf, etc.
+import org.jetbrains.kotlinx.dataframe.io.* // readCsv, writeCsv, readJson, writeJson, etc.
+import org.jetbrains.kotlinx.dataframe.* // DataFrame, DataRow, DataColumn, etc.
+import org.jetbrains.kotlinx.dataframe.columns.* // ValueColumn, ColumnGroup, FrameColumn, etc.
+// When using @DataSchema or other annotations:
+import org.jetbrains.kotlinx.dataframe.annotations.*
+```
 ## The three contexts
 The same DataFrame operation can be written in three different styles depending on context; pick the right one before you start writing.
 
@@ -72,10 +81,10 @@ dependencies {
 }
 ```
 ```properties
-# gradle.properties — REQUIRED, see KT-66735
+# gradle.properties — REQUIRED for plugin projects, see KT-66735
 kotlin.incremental=false
 ```
-Without `kotlin.incremental=false`, the plugin's generated schemas can go stale between builds and you'll get "unresolved reference: columnName" errors that disappear after a clean build. **Always include this line.**This is likely solved in Kotlin 2.4+.
+Without `kotlin.incremental=false`, the plugin's generated schemas can go stale between builds and you'll get "unresolved reference: columnName" errors that disappear after a clean build. **Always include this line in plugin projects.** Not needed when using the String API without the plugin. Likely fixed in Kotlin 2.4+.
 IDE support for inline schema hovers and completion requires IntelliJ IDEA 2025.2+ with Kotlin 2.2.20+.
 ### Setup recipe (Notebook)
 ```kotlin
@@ -99,7 +108,7 @@ val df = DataFrame.readCsv("repos.csv")
     .convertTo<Repo>() // now typed as DataFrame<Repo>
     .filter { stargazersCount > 50 } // typed access from here on
 ```
-`@DataSchema` works on both `data class` and `interface`. Interfaces are preferred when the schema describes data you only read (not construct).
+`@DataSchema` works on both `data class` and `interface`. Interfaces are preferred when the schema describes data you only read (not construct). Use **nullable types** (`String?`, `Double?`) for any column that may have missing values in the source data — `convertTo<>()` will throw if a non-nullable field encounters a null.
 ### `@ColumnName` for non-Kotlin-identifier names
 When the actual column name in the CSV/JSON isn't a valid Kotlin identifier (or uses snake_case while you want camelCase):
 ```kotlin
@@ -187,16 +196,25 @@ df.groupBy { city }.aggregate {
 }
 // Pivot (schema becomes data-dependent — falls back to String API after)
 df.pivot { month }.groupBy { product }.values { sales }
+// Take first N rows
+df.take(10)
+df.takeLast(5)
+// Concatenate two DataFrames with the same schema
+val combined = df1 concat df2
+// Drop rows where a column is null (preferred over filter { col != null } with the plugin)
+df.dropNulls { age } // drops rows where age IS null
+df.dropNulls() // drops rows where ANY column is null
 // Joins
 df1.innerJoin(df2) { id }
 df1.leftJoin(df2) { df1.id match right.userId }
 ```
-For the full operations list, see `references/operations-cookbook.md`.
 ## Reading and writing data
 DataFrame's IO is split into modules. The main `dataframe` artifact pulls them in transitively, but if you depend only on `dataframe-core`, add format modules explicitly.
 ```kotlin
 // CSV/TSV (dataframe-csv) (+ dataframe-json if your CSV contains JSON to parse)
-DataFrame.readCsv("data.csv")
+DataFrame.readCsv("data.csv") // comma-delimited by default
+DataFrame.readCsv("data.csv", delimiter = ';') // semicolon-delimited (common in EU exports)
+DataFrame.readCsv("data.csv", delimiter = ';', parserOptions = ParserOptions(locale = java.util.Locale.forLanguageTag("fr"))) // EU decimal commas
 DataFrame.readTsv(URL("https://example.com/data.csv"))
 df.writeCsv("out.csv")
 // JSON (dataframe-json)
@@ -218,17 +236,60 @@ df.writeArrowFeather(file)
 ```
 In a notebook, the corresponding `%use` integrations are included automatically. In Gradle, all the above ship under`org.jetbrains.kotlinx:dataframe`; only when you slim down to `dataframe-core` do you need to add format-specific modules.
 ## Hierarchical / nested data
-`DataFrame` supports `ColumnGroup` (a sub-DataFrame as a column) and `FrameColumn` (a column whose cells are themselves DataFrames). JSON with nested objects/arrays naturally produces these. `FrameColumn`s cannot contain nulls. A`ValueColumn<DataFrame<>?>` is possible though.
+`DataFrame` supports `ColumnGroup` (a sub-DataFrame as a column) and `FrameColumn` (a column whose cells are themselves DataFrames). JSON with nested objects/arrays naturally produces these.
+
 ```kotlin
-// Navigate into a group
-df.select { person.firstName and person.lastName }
-// Group flat columns into a sub-structure
+// JSON like:
+// {"owner": {"login": "alice", "type": "User"},
+//  "contributors": [{"login": "bob", "commits": 12}, {"login": "carol", "commits": 5}]}
+val df = DataFrame.readJson("repos.json")
+// 'owner'        — ColumnGroup  (nested object → sub-columns owner.login, owner.type)
+// 'contributors' — FrameColumn  (nested array-of-objects; each cell is a mini-DataFrame)
+//
+// IMPORTANT: a JSON array of *primitives* like ["kotlin","api"] becomes
+// ValueColumn<List<String>>, NOT a FrameColumn. FrameColumns require arrays of objects.
+
+// readJson produces a runtime schema — the plugin CANNOT generate extension properties
+// from it directly. To use typed access you must declare @DataSchema + convertTo<>():
+@DataSchema interface Owner { val login: String; val type: String }
+@DataSchema interface Contributor { val login: String; val commits: Int }
+@DataSchema interface Repo {
+    val owner: Owner                         // nested object  → ColumnGroup
+    val contributors: DataFrame<Contributor> // nested array-of-objects → FrameColumn
+}
+val df = DataFrame.readJson("repos.json").convertTo<Repo>()
+// Now owner.login, owner.type, and contributors are typed extension properties.
+
+// Navigate into a ColumnGroup (plugin extension properties after convertTo)
+df.select { owner.login and owner.type }
+// String API (no convertTo needed):
+df.select { "owner"["login"] and "owner"["type"] }
+
+// Explode a FrameColumn → one row per nested record (like SQL UNNEST)
+// After explode on a typed FrameColumn, the plugin keeps contributors.login etc. accessible.
+df.explode { contributors }    // typed FrameColumn
+df.explode("contributors")     // String API — also works without convertTo
+
+// Post-explode with typed access (requires convertTo<Repo>() first):
+df.explode { contributors }
+    .groupBy { contributors.login }
+    .aggregate { sum { contributors.commits } into "total" }
+
+// Post-explode with String API (no convertTo needed):
+df.explode("contributors")
+    .ungroup("contributors")        // brings login and commits to the top level
+    .groupBy("login")
+    .aggregate { sum("commits") into "total" }
+
+// Group flat columns into a sub-structure, or flatten an existing group
 df.group { firstName and lastName }.into("name")
-// Flatten a group
 df.ungroup { name }
-// Explode a FrameColumn (one row per inner row)
-df.explode { events }
+
+// Flatten all nested columns to the top level
+df.flatten()
 ```
+
+`FrameColumn`s cannot contain nulls (use `ValueColumn<DataFrame<*>?>` if nullability is needed). After `explode`, the former FrameColumn becomes a ColumnGroup whose sub-columns are the fields of the nested object.
 ## Output and rendering
 In notebooks, the last expression in a cell renders as an interactive table automatically. To produce HTML in a Gradle project:
 ```kotlin
