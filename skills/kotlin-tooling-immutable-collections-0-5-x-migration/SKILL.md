@@ -12,7 +12,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: JetBrains
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # kotlinx.collections.immutable 0.5.x Migration
@@ -109,6 +109,14 @@ not the deprecated names. (Add `"DEPRECATION"` to the suppress only when an over
 itself still calls a deprecated member.) Doing this now matters: at 0.6.0 the old names
 become compile errors, and at 0.7.0 they are removed. See [`0.5.0-MIGRATION.md`] for the
 upstream implementer guidance.
+
+### 6. Run any documented follow-up steps
+
+Some projects document steps to run after a dependency change that the compiler won't
+surface — most commonly regenerating dependency-verification metadata (the
+`gradle/verification-metadata.xml` hashes from step 3, via a prescribed command or script).
+Check `README.md` / `CONTRIBUTING.md` / `CLAUDE.md` / `AGENTS.md` for such a procedure, run
+it, and re-confirm the build is clean.
 
 ## Rename reference
 
