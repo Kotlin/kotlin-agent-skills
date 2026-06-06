@@ -12,7 +12,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: JetBrains
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
 # kotlinx.collections.immutable 0.5.x Migration
@@ -78,6 +78,20 @@ metadata-regeneration commands to try to clear it.
 `MutableList` / `MutableMap` / `MutableSet` and on the `.Builder` types, which mutate in
 place and are *not* deprecated. Only the sites the compiler flags (receiver statically
 `Persistent*`) get renamed; if it didn't flag it, leave it.
+
+**An `Unresolved reference` after a rename means you renamed the wrong receiver.** The
+participial names exist *only* on the kotlinx `Persistent*` interfaces. The same `add` /
+`put` / `remove` names also appear on `Mutable*` collections, on `.Builder` types, and on
+project-defined look-alikes — e.g. a custom multimap or collection wrapper with its own
+`put`/`add` that has nothing to do with this library. Renaming a call on any of those
+produces a hard `Unresolved reference: putting/adding/…` (a compile *error*, not a
+deprecation warning); when you see one, revert that single site to the original name.
+Disambiguate by the receiver's *declared* type, never the method name: a field named like a
+`Persistent*` may hold another type, and a look-alike is a rename target only if it actually
+implements a kotlinx `Persistent*` interface — in which case it's a custom implementer
+(step 5), migrated via overrides rather than a call-site rename. This matters most when you
+can't lean on a fast recompile and are renaming from reading the source: match the type, not
+the name.
 
 **Java callers.** The recompile flags them only if the build reports javac deprecation
 warnings (`-Xlint:deprecation`, usually off). If it doesn't, grep the `.java` files that
