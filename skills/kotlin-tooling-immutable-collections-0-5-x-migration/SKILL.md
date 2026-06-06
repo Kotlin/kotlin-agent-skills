@@ -12,7 +12,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: JetBrains
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
 # kotlinx.collections.immutable 0.5.x Migration
@@ -55,7 +55,9 @@ tell post-migration errors from pre-existing ones — get a working compile comm
 Find where the version is pinned — `grep -rn kotlinx-collections-immutable` across the build
 files finds it (version catalog, build script, `gradle.properties`, `pom.xml`, …) — and set
 it to the latest 0.5.x on [Maven Central] (a `-beta` is fine). If the build pins artifact
-hashes (e.g. `gradle/verification-metadata.xml`), update those too. The bump is
+hashes (e.g. `gradle/verification-metadata.xml`), update those too — the cheapest fix is to
+copy the new artifact's checksum straight from the dependency-verification failure message
+and add just that one entry, rather than regenerating the whole metadata file. The bump is
 binary-compatible; old code keeps compiling with warnings. (If the dependency fails to
 resolve with a Kotlin metadata-version error, the project's Kotlin is too old for the 0.5.x
 artifact — bump Kotlin first.)
@@ -67,7 +69,10 @@ compiler emits one warning per call site naming the replacement (e.g. *"Use remo
 instead"*). Apply that rename. Repeat compile → fix until no `kotlinx.collections.immutable`
 deprecation warnings remain. (For multiplatform, one target compile surfaces the shared call
 sites. Pre-existing factory deprecations such as `immutableListOf` → `persistentListOf`
-appear the same way — apply those too.)
+appear the same way — apply those too.) A recompile that fails right after the bump is
+failing *on these deprecations* (plus, if hashes are pinned, a one-time dependency-verification
+error) — keep applying the renames the warnings name; don't re-run dependency-resolution or
+metadata-regeneration commands to try to clear it.
 
 **Trust the compiler — never find/replace by name.** The same method names exist on
 `MutableList` / `MutableMap` / `MutableSet` and on the `.Builder` types, which mutate in
@@ -112,11 +117,15 @@ upstream implementer guidance.
 
 ### 6. Run any documented follow-up steps
 
-Some projects document steps to run after a dependency change that the compiler won't
-surface — most commonly regenerating dependency-verification metadata (the
-`gradle/verification-metadata.xml` hashes from step 3, via a prescribed command or script).
-Check `README.md` / `CONTRIBUTING.md` / `CLAUDE.md` / `AGENTS.md` for such a procedure, run
-it, and re-confirm the build is clean.
+Do this *after* the renames compile clean, so that if you run low on time the call-site work
+is already done. Some projects document steps to run after a dependency change that the
+compiler won't surface — most commonly regenerating dependency-verification metadata (the
+`gradle/verification-metadata.xml` hashes from step 3). Usually the single-entry fix from
+step 3 is all you need; only fall back to the project's documented full-regeneration procedure
+(in `README.md` / `CONTRIBUTING.md` / `CLAUDE.md` / `AGENTS.md`) if that one entry isn't
+enough. Run it **once** — a full `--write-verification-metadata` / "resolve all dependencies"
+pass re-resolves the entire graph and is slow, and repeating it rarely changes the outcome.
+Then re-confirm the build is clean.
 
 ## Rename reference
 
