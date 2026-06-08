@@ -40,7 +40,8 @@ Check the version the project currently uses:
 ### 1. Find the build command
 
 Check `README.md`, `CLAUDE.md`, or `AGENTS.md` for how the project builds; if it isn't
-written down, infer it from the build files — Gradle (`./gradlew`), Maven (`./mvnw`), Bazel
+written down, infer it from the build files — Gradle (`./gradlew`), Maven (`mvn`, or the
+`./mvnw` wrapper), Bazel
 (a `bazel` wrapper), or a custom script. Record the compile command (and the test command).
 In a multi-module project you only need the modules that use the library, plus any you
 change — not a whole-repo build.
@@ -114,6 +115,13 @@ Find them:
 ```bash
 grep -rnE --include='*.kt' \
   '(class|object|interface)\s+\w[^:]*:\s*[^{]*\b(PersistentList|PersistentMap|PersistentSet|PersistentCollection)\s*<' .
+```
+
+On Windows PowerShell, `Select-String` is the `grep` equivalent:
+
+```powershell
+Get-ChildItem -Recurse -Filter *.kt |
+  Select-String '(class|object|interface)\s+\w[^:]*:\s*[^{]*\b(PersistentList|PersistentMap|PersistentSet|PersistentCollection)\s*<'
 ```
 
 (Confirm a match really lists the interface as a *supertype*, not just a field type or type
