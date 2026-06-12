@@ -118,7 +118,7 @@ fun useLocalPackage() {
 | `version = revision("hash")` | Git commit hash | Pinning specific commits |
 | `version = range("1.0", "2.0")` | Version range | Constraining upper bound |
 
-**Important for migration:** The simple string `version = "X.Y.Z"` resolves to a minimum version (`from()`), which may pull a newer version than what was in CocoaPods. For exact version preservation during migration, use the typed API: `version = exact("X.Y.Z")`.
+**Important:** The simple string `version = "X.Y.Z"` resolves to a minimum version (`from()`), which may pull a newer version than requested. For exact version pinning, use the typed API: `version = exact("X.Y.Z")`.
 
 ---
 
@@ -228,7 +228,7 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    // Framework configuration (moved from cocoapods block)
+    // Framework configuration
     listOf(iosArm64(), iosSimulatorArm64()).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "SharedModule"
