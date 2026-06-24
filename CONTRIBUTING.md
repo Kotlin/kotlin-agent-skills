@@ -1,4 +1,5 @@
-# How to contribute to this repository?
+# **Note:** External contributions are on hold until further notice.
+## How to contribute to this repository?
 
 ## Adding new skills
 
