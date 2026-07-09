@@ -12,6 +12,8 @@ license: Apache-2.0
 metadata:
   author: JetBrains
   version: "1.0.0"
+  tested_models: "openai/gpt-5.5, openai/gpt-5.4-mini"
+  last_eval: "2026-07-06"
 ---
 
 # Kotlin/Native Build Performance
@@ -151,11 +153,3 @@ Close with a short performance note:
 | Building final native binaries and XCFrameworks | https://kotlinlang.org/docs/multiplatform/multiplatform-build-native-binaries.html |
 | Kotlin/Native binary options | https://kotlinlang.org/docs/native-binary-options.html |
 | KSP with Kotlin Multiplatform | https://kotlinlang.org/docs/ksp-multiplatform.html |
-
-## Testing
-
-A/B evaluated with the
-[skills-ab-eval cookbook suite](https://github.com/JetBrains/skills-ab-eval-cookbook-kmp)
-(`kotlin-tooling-native-build-performance`: a synthetic audit fixture and a
-KotlinProject template copy with seeded regressions). See the suite's
-`EVALUATION.md` for current numbers.
