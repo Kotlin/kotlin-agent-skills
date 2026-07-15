@@ -59,12 +59,6 @@ echo
 ## 1. Disabled performance defaults (highest impact, safest to fix)
 
 scan HIGH \
-    "Deprecated kotlin.native.cacheKind...=none (Kotlin 2.3.20+)" \
-    "references/caching-and-gradle.md: remove stale workarounds" \
-    '^[[:space:]]*kotlin\.native\.cacheKind(\.[A-Za-z0-9]+)?[[:space:]]*=[[:space:]]*none' \
-    'gradle.properties'
-
-scan HIGH \
     "Kotlin/Native compiler daemon disabled" \
     "references/caching-and-gradle.md: remove stale workarounds" \
     '^[[:space:]]*kotlin\.native\.disableCompilerDaemon[[:space:]]*=[[:space:]]*true' \
@@ -75,12 +69,6 @@ scan HIGH \
     "references/caching-and-gradle.md: remove stale workarounds" \
     '^[[:space:]]*org\.gradle\.daemon[[:space:]]*=[[:space:]]*false' \
     'gradle.properties'
-
-scan HIGH \
-    "Version-scoped disableNativeCache(...) exception" \
-    "references/caching-and-gradle.md: remove stale workarounds" \
-    'disableNativeCache[[:space:]]*\(' \
-    '*.gradle.kts' '*.gradle'
 
 scan MEDIUM \
     "Configuration on Demand is unsupported by KMP and is not the configuration cache" \

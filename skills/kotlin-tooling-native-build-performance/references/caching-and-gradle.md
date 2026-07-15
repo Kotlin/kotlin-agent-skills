@@ -11,18 +11,15 @@ if the project is behind. Read the compatibility guide for the target release
 before upgrading; for example, use the
 [Kotlin 2.4 compatibility guide](https://kotlinlang.org/docs/compatibility-guide-24.html)
 when moving to Kotlin 2.4.x. Each target release has a corresponding
-compatibility guide.
+compatibility guide. See the
+[Kotlin 2.3.20 release notes](https://kotlinlang.org/docs/whatsnew2320.html#new-dsl-for-disabling-compilation-cache)
+for the related cache change.
 
 ## Remove stale workarounds
 
 Projects accumulate workarounds for long-fixed compiler issues. Upgrade Kotlin
 first, then inspect:
 
-- `kotlin.native.cacheKind=none` (and per-target variants). Kotlin 2.3.20
-  deprecated this property; remove it after upgrading.
-- `disableNativeCache(...)` in the `binaries {}` DSL. Since Kotlin 2.3.20 this
-  exception records the affected Kotlin version, a reason, and, optionally,
-  an issue.
 - `kotlin.native.disableCompilerDaemon=true`
 - `org.gradle.daemon=false`
 
@@ -68,6 +65,4 @@ Use the `konan.data.dir` Gradle property only when the project intentionally
 relocates that directory (for example, to a cacheable path on a CI runner).
 
 Docs: https://kotlinlang.org/docs/native-improving-compilation-time.html and
-https://kotlinlang.org/docs/gradle-compilation-and-caches.html. The cache DSL
-change is documented at
-https://kotlinlang.org/docs/whatsnew2320.html#new-dsl-for-disabling-compilation-cache.
+https://kotlinlang.org/docs/gradle-compilation-and-caches.html
