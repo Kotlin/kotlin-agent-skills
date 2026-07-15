@@ -5,9 +5,9 @@ description: >
   Multiplatform projects that target iOS. Use when the user reports slow iOS or
   shared-framework builds, long linkDebug*/linkRelease* or XCFramework tasks,
   cold CI builds that re-download the Kotlin/Native toolchain, disabled
-  Kotlin/Native caches (kotlin.native.cacheKind=none), kapt or generated code
-  on the native path, transitiveExport usage, or asks for a local-development
-  versus CI build performance plan.
+  Kotlin/Native caches (kotlin.native.cacheKind=none), KSP or other generated
+  code on the native path, transitiveExport usage, or asks for a
+  local-development versus CI build performance plan.
 license: Apache-2.0
 metadata:
   author: JetBrains
@@ -39,7 +39,7 @@ log). Then match the dominant symptom:
 | Kotlin/Native compiler distribution downloaded on every CI run | `~/.konan` not preserved between runs | [caching-and-gradle](references/caching-and-gradle.md) |
 | Long pause before the first task starts | Configuration phase, no configuration cache | [caching-and-gradle](references/caching-and-gradle.md) |
 | All iOS targets build when only one simulator is needed | Broad task (`build`, `assemble`, `assemble*XCFramework`) or unused targets | [artifacts-and-targets](references/artifacts-and-targets.md) |
-| `kapt*` or `ksp*` tasks ahead of `compileKotlinIos*` | Generated-code work on the native path | [exports-and-generated-code](references/exports-and-generated-code.md) |
+| `ksp*` tasks ahead of `compileKotlinIos*` | Generated-code work on the native path | [exports-and-generated-code](references/exports-and-generated-code.md) |
 | Small source edit recompiles and relinks everything | Compiler caches disabled, or missing incrementality | [caching-and-gradle](references/caching-and-gradle.md), [experimental](references/experimental.md) |
 | Machine overloaded while several `link*` tasks run at once | Parallel native linking | [caching-and-gradle](references/caching-and-gradle.md), worker-limit caveat |
 
@@ -52,7 +52,7 @@ log). Then match the dominant symptom:
    ```
 
    It is read-only and prints `file:line` findings (disabled caches, broad
-   local tasks, `transitiveExport`, kapt on the native path, missing CI
+   local tasks, `transitiveExport`, broad KSP configuration, missing CI
    `.konan` cache), each pointing at the reference file with the fix.
    Findings are leads, not verdicts — confirm each against project policy.
 2. Find the command the user actually waits for: a script, a CI step, or the
@@ -82,7 +82,7 @@ Apply fixes one at a time, re-measuring as you go:
    correct integration method, justified target matrix:
    [references/artifacts-and-targets.md](references/artifacts-and-targets.md)
 3. **Cut export and generated-code cost** — drop `transitiveExport`, narrow
-   `export(...)`, move kapt work to scoped KSP:
+   `export(...)`, scope KSP work to the native compilations that need it:
    [references/exports-and-generated-code.md](references/exports-and-generated-code.md)
 4. **Experimental switches last, with the user's agreement**:
    [references/experimental.md](references/experimental.md)

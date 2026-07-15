@@ -114,12 +114,6 @@ scan HIGH \
 
 ## 3. Generated code on the native path
 
-scan MEDIUM \
-    "kapt in a KMP build; if it shows up before compileKotlinIos*, it is on the hot path" \
-    "references/exports-and-generated-code.md: generated code" \
-    'kotlin\("kapt"\)|kotlin-kapt|plugins\.kotlin\.kapt|^[[:space:]]*kapt\(' \
-    '*.gradle.kts' '*.gradle' '*.toml'
-
 scan INFO \
     "broad ksp(...) dependency; prefer per-target add(\"ksp<Target>\", ...) in KMP" \
     "references/exports-and-generated-code.md: generated code" \

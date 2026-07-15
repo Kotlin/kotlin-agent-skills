@@ -30,11 +30,10 @@ needs.
 
 ## Generated code
 
-If `kapt*` or `ksp*` tasks dominate the measured time, report the bottleneck
-as generated-code work — do not present a Kotlin/Native tweak as the fix.
+If `ksp*` tasks dominate the measured time, report the bottleneck as
+generated-code work — do not present a Kotlin/Native tweak as the fix.
 
-- Prefer KSP over kapt when the processor supports it.
-- In multiplatform projects, scope KSP to the targets that need it instead of
+- Scope KSP to the targets or source sets that need generated code instead of
   a broad `ksp(...)` dependency:
 
   ```kotlin
@@ -44,9 +43,8 @@ as generated-code work — do not present a Kotlin/Native tweak as the fix.
   }
   ```
 
-- If kapt must stay, set `kapt.include.compile.classpath=false` so processors
-  are not searched on the whole compile classpath, and propose the KSP
-  migration as separate follow-up work.
+- Confirm the generated sources are consumed by the corresponding native
+  compilation before adding another target-specific KSP configuration.
 
 Docs: https://kotlinlang.org/docs/ksp-multiplatform.html and
 https://kotlinlang.org/docs/native-improving-compilation-time.html
