@@ -59,7 +59,7 @@ echo
 ## 1. Disabled performance defaults (highest impact, safest to fix)
 
 scan HIGH \
-    "Kotlin/Native compiler caches disabled (kotlin.native.cacheKind...=none)" \
+    "Deprecated kotlin.native.cacheKind...=none (Kotlin 2.3.20+)" \
     "references/caching-and-gradle.md: remove stale workarounds" \
     '^[[:space:]]*kotlin\.native\.cacheKind(\.[A-Za-z0-9]+)?[[:space:]]*=[[:space:]]*none' \
     'gradle.properties'
@@ -77,7 +77,7 @@ scan HIGH \
     'gradle.properties'
 
 scan HIGH \
-    "disableNativeCache(...) in build DSL" \
+    "Version-scoped disableNativeCache(...) exception" \
     "references/caching-and-gradle.md: remove stale workarounds" \
     'disableNativeCache[[:space:]]*\(' \
     '*.gradle.kts' '*.gradle'

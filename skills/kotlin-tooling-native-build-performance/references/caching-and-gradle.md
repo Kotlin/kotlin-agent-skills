@@ -7,21 +7,27 @@ Safe for every scenario; apply these before anything else.
 The latest Kotlin version is the first official recommendation for
 Kotlin/Native compilation time — each release improves compiler performance.
 Check `gradle/libs.versions.toml` or the plugin block and propose an upgrade
-if the project is behind.
+if the project is behind. Read the compatibility guide for the target release
+before upgrading; for example, use the
+[Kotlin 2.4 compatibility guide](https://kotlinlang.org/docs/compatibility-guide-24.html)
+when moving to Kotlin 2.4.x. Each target release has a corresponding
+compatibility guide.
 
 ## Remove stale workarounds
 
-Projects accumulate workarounds for long-fixed compiler issues. Look for:
+Projects accumulate workarounds for long-fixed compiler issues. Upgrade Kotlin
+first, then inspect:
 
-- `kotlin.native.cacheKind=none` (also per-target variants such as
-  `kotlin.native.cacheKind.iosSimulatorArm64=none`)
+- `kotlin.native.cacheKind=none` (and per-target variants). Kotlin 2.3.20
+  deprecated this property; remove it after upgrading.
+- `disableNativeCache(...)` in the `binaries {}` DSL. Since Kotlin 2.3.20 this
+  exception records the affected Kotlin version, a reason, and, optionally,
+  an issue.
 - `kotlin.native.disableCompilerDaemon=true`
-- `disableNativeCache(...)` in the `binaries {}` DSL
 - `org.gradle.daemon=false`
 
-Each disables a default that exists for performance. Remove them unless a
-comment or commit message ties them to a still-open issue — verify the issue
-is still open before keeping the workaround, and re-test after removal.
+Each disables a performance feature. Remove stale workarounds and check
+whether the build completes successfully.
 
 ## Enable Gradle caching
 
@@ -66,4 +72,6 @@ Use the `konan.data.dir` Gradle property only when the project intentionally
 relocates that directory (for example, to a cacheable path on a CI runner).
 
 Docs: https://kotlinlang.org/docs/native-improving-compilation-time.html and
-https://kotlinlang.org/docs/gradle-compilation-and-caches.html
+https://kotlinlang.org/docs/gradle-compilation-and-caches.html. The cache DSL
+change is documented at
+https://kotlinlang.org/docs/whatsnew2320.html#new-dsl-for-disabling-compilation-cache.
