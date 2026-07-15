@@ -35,7 +35,6 @@ whether the build completes successfully.
 # gradle.properties
 org.gradle.caching=true
 org.gradle.configuration-cache=true
-org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8
 ```
 
 - Trial the configuration cache with the user's real task before committing
@@ -49,9 +48,6 @@ org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8
 - Delete `org.gradle.configureondemand=true`. Kotlin Multiplatform does not
   support Configuration on Demand, and it is not the same feature as the
   configuration cache.
-- If compilation itself is memory-bound, give the Kotlin daemon its own heap
-  with `kotlin.daemon.jvmargs=-Xmx3g` rather than only growing the Gradle
-  daemon.
 - For CI, a remote Gradle build cache extends `org.gradle.caching` across
   machines.
 
