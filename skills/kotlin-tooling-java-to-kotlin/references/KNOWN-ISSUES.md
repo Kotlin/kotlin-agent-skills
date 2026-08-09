@@ -2,7 +2,7 @@
 
 A reference of common issues encountered during Java-to-Kotlin conversion, with solutions.
 
-### Kotlin Keyword Conflicts
+## Kotlin Keyword Conflicts
 
 Java identifiers that are reserved keywords in Kotlin will cause compilation errors after conversion.
 
@@ -24,7 +24,7 @@ fun `in`(items: List<String>): Boolean { ... }
 
 When the API is internal (not exposed to other modules), prefer renaming the identifier to a non-keyword alternative instead of using backticks. For example, rename `when` to `onEvent` or `in` to `contains`.
 
-### SAM Conversion Ambiguity
+## SAM Conversion Ambiguity
 
 When a Java method has overloads that each accept a different SAM (Single Abstract Method) interface, Kotlin's trailing lambda syntax becomes ambiguous. The compiler cannot determine which SAM interface the lambda should implement.
 
@@ -47,7 +47,7 @@ executor.submit(Callable { computeResult() })
 
 Use explicit SAM constructor calls whenever there are overloaded methods accepting different functional interfaces.
 
-### Platform Types
+## Platform Types
 
 Java types without nullability annotations (`@Nullable`, `@NotNull`, `@NonNull`) become "platform types" (`T!`) in Kotlin. Platform types bypass Kotlin's null-safety system — they are neither nullable nor non-null, and null checks are deferred to runtime.
 
@@ -70,7 +70,7 @@ val items: List<String> = obj.items      // if neither list nor elements are nul
 
 Always add explicit type declarations to eliminate platform types. Analyze the Java source code, documentation, and call sites to determine the correct nullability.
 
-### @JvmStatic / @JvmField / @JvmOverloads
+## @JvmStatic / @JvmField / @JvmOverloads
 
 When converted Kotlin code is still called from Java, use JVM interop annotations to maintain a clean Java API:
 
@@ -120,7 +120,7 @@ fun connect(host: String, port: Int = 443, secure: Boolean = true) { ... }
 // connect(String host, int port, boolean secure)
 ```
 
-### Checked Exceptions
+## Checked Exceptions
 
 Kotlin does not have checked exceptions. When Kotlin code is called from Java, the Java compiler will not know about thrown exceptions unless annotated with `@Throws`:
 
@@ -136,7 +136,7 @@ fun readFile(path: String): String {
 
 Add `@Throws` to every Kotlin function that throws checked exceptions and is called from Java code.
 
-### Wildcard Generics
+## Wildcard Generics
 
 Java wildcard types map to Kotlin's variance annotations:
 
@@ -162,7 +162,7 @@ fun legacy(items: List<Any?>) { ... }  // explicit type parameter
 
 For raw types, analyze the code to determine the most specific type parameter rather than defaulting to `Any?`.
 
-### Static Members
+## Static Members
 
 Java's `static` keyword has no direct equivalent in Kotlin. Use the following mappings:
 
@@ -212,7 +212,7 @@ class Registry {
 }
 ```
 
-### Synchronized Blocks
+## Synchronized Blocks
 
 Java's `synchronized` constructs map to Kotlin as follows:
 
@@ -245,7 +245,7 @@ public synchronized void update() { ... }
 fun update() { ... }
 ```
 
-### Anonymous Inner Classes
+## Anonymous Inner Classes
 
 **Single Abstract Method (SAM) interfaces** — Convert to lambda syntax:
 
@@ -284,7 +284,7 @@ view.addListener(object : ViewListener {
 })
 ```
 
-### Array Handling
+## Array Handling
 
 Java arrays map to Kotlin types as follows:
 
@@ -302,7 +302,7 @@ Java arrays map to Kotlin types as follows:
 
 Using `Array<Int>` instead of `IntArray` causes boxing overhead — always use the specialized primitive array types.
 
-### Ternary Operator
+## Ternary Operator
 
 Kotlin has no ternary operator. Use `if`/`else` as an expression:
 
@@ -316,7 +316,7 @@ String label = (count > 0) ? "Items: " + count : "Empty";
 val label = if (count > 0) "Items: $count" else "Empty"
 ```
 
-### instanceof
+## instanceof
 
 Java's `instanceof` maps to Kotlin's `is` keyword. Kotlin supports smart casting, so an explicit cast after an `is` check is unnecessary:
 
@@ -335,7 +335,7 @@ if (shape is Circle) {
 }
 ```
 
-### try-with-resources
+## try-with-resources
 
 Java's try-with-resources maps to Kotlin's `.use {}` extension function:
 
