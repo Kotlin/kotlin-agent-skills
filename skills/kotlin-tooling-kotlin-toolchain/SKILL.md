@@ -12,7 +12,7 @@ metadata:
   version: "0.1.0"
   tested_models:
     provider: anthropic
-    model: [anthropic/claude-sonnet-5, anthropic/claude-opus-5]
+    model: "anthropic/claude-sonnet-5, anthropic/claude-opus-5"
     agent_version: claude-code
     last_eval: 2026-08-14
 ---
