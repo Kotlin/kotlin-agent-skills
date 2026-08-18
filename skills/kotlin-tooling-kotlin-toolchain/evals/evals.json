@@ -1,0 +1,20 @@
+{
+  "skill_name": "kotlin-tooling-kotlin-toolchain",
+  "evals": [
+    {
+      "id": "scaffold-android-ios-app",
+      "prompt": "Create a Kotlin project with Android and iOS platforms.",
+      "expected_output": "A Kotlin Toolchain (Amper) multiplatform project with no Gradle or Maven build files, containing three modules: a shared non-application module plus an android/app module and an ios/app module. The shared module declares the iOS targets, exposes a common Compose @Composable (annotated with @org.jetbrains.compose.reload.DevelopmentEntryPoint) that both the Android and iOS app entry points call, and has a passing test in its common test source set. The Android app builds successfully and produces an APK.",
+      "assertions": [
+        "The project is built with Kotlin Toolchain, not Gradle or Maven: no build.gradle, build.gradle.kts, settings.gradle, settings.gradle.kts, or pom.xml exists anywhere in the workspace.",
+        "At least one module.yaml (or a project.yaml) is present, marking this as a Kotlin Toolchain project.",
+        "The project has three modules: a shared non-application module, an android/app module, and an ios/app module.",
+        "At least one module declares the iOS targets, i.e. one of iosArm64, iosSimulatorArm64, or iosX64.",
+        "The Android application builds successfully and produces an .apk file.",
+        "The shared module has a test in its common test source set that passes when run via `kotlin test`.",
+        "A @Composable function defined in the shared module's common code is invoked from both the Android and the iOS app entry points.",
+        "The annotation @org.jetbrains.compose.reload.DevelopmentEntryPoint is present in the project's Kotlin sources."
+      ]
+    }
+  ]
+}
