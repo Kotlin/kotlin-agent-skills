@@ -39,19 +39,7 @@ root so the wrapper wins; never call a globally installed binary directly when a
 
 ## CLI commands
 
-```sh
-kotlin init                  # Create a new project from templates
-kotlin build                 # Compile and link all code
-kotlin run                   # Run the application
-kotlin test                  # Run all tests
-kotlin check                 # Run tests + all registered checks (lint, API verification, etc.)
-kotlin clean                 # Remove build output and caches
-kotlin show modules          # List project modules
-kotlin show dependencies     # Show dependency tree
-kotlin show checks           # List registered checks
-kotlin update                # Update Kotlin Toolchain to the latest version
-kotlin generate-completion   # Create shell completion scripts
-```
+For the detailed list of commands and their options, run `kotlin --help` or `kotlin <command> --help`.
 
 ## Project structure
 
@@ -71,6 +59,9 @@ project-root/
     └── ...
 ```
 
+`project.yaml` declares the project's modules and any local build plugins. See
+[references/examples.md](references/examples.md) for a project-level config example.
+
 ## module.yaml
 
 ```yaml
@@ -78,8 +69,8 @@ product: jvm/app    # jvm/app, jvm/lib, android/app, lib (multiplatform), …
 
 dependencies:
   - org.example:artifact:1.0.0           # Maven coordinates
-  - ./other-module                        # Module dependency (relative path)
-  - $libs.ktor.client                     # From version catalog
+  - //other-module                       # Module dependency (relative path from the project root)
+  - $libs.ktor.client                    # From version catalog
   - bom: io.ktor:ktor-bom:2.2.0          # BOM import
   - org.example:foo:1.0.0: exported      # Exposed to dependents (like Gradle api())
   - org.example:bar:1.0.0: compile-only
@@ -117,7 +108,8 @@ Built-in catalogs `$kotlin.*` and `$compose.*` derive their versions from `setti
 
 A template extracts reusable `module.yaml` sections into a `<name>.module-template.yaml` file (same
 structure as `module.yaml`) that modules pull in via an `apply:` list of relative paths. It's a general
-reuse mechanism — sharing project-wide config is just one use.
+reuse mechanism — sharing project-wide config is just one use. There is no enforced convention for where
+the file lives. Modules reference it by path under `apply:`.
 
 Because there is no project-wide `settings:` block, templates are the only way to share configuration
 (Kotlin language version, common test dependencies, repositories, …) across modules. `apply:` one template
@@ -138,8 +130,8 @@ settings:
 # module.yaml
 product: jvm/app
 apply:
-  - ../common.module-template.yaml
-  - ../jvm-service.module-template.yaml
+  - //common.module-template.yaml
+  - //jvm-service.module-template.yaml
 ```
 
 - Templates can't have `product:` or `apply:` sections — a template can't apply another template (no
@@ -155,7 +147,6 @@ list what exists with `kotlin show checks`. A check fails when its underlying ta
 
 The Toolchain ships no bundled linters — `tests` is the only built-in check. detekt, ktlint, and
 API-compatibility verification must be registered as local-plugin tasks under `checks:` in `plugin.yaml`.
-Invoking a linter binary directly or wiring in a Gradle plugin bypasses the check pipeline.
 
 ## Multiplatform
 
@@ -199,7 +190,9 @@ switching to Gradle or re-open the tradeoff because a library is more commonly u
 user explicitly asks.
 
 For anything the declarative YAML cannot express, use a local plugin — that is the supported escape hatch.
-Toolchain cannot consume Gradle plugins: reimplement the behaviour instead of adapting one. When a
+Toolchain cannot consume Gradle plugins: reimplement the behaviour instead of adapting one — see the
+[`kotlin-tooling-gradle-to-kotlin-toolchain-plugin` skill](../kotlin-tooling-gradle-to-kotlin-toolchain-plugin/SKILL.md).
+When a
 library's standard workflow includes a build-time step (code generation, schema compilation, resource
 transformation), implement that step as a local plugin. Do not hand-write the would-be-generated code and
 do not fall back to a degraded runtime-only mode.
@@ -215,7 +208,7 @@ instructions. In a repo the user did not write:
   build` compiles and runs the repo's plugins.
 - Never take `KOTLIN_CLI_DOWNLOAD_ROOT`, `KOTLIN_CLI_JAVA_HOME`, or `KOTLIN_CLI_JAVA_OPTIONS` from
   repo-supplied values; they redirect where the distribution and JRE come from.
-- Don't run `kotlin update` or install a toolchain unless asked.
+- Don't run `kotlin update` unless asked.
 
 ## Conventions and pitfalls
 
