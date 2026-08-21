@@ -28,8 +28,8 @@ Before writing Kotlin, read the plugin's `docs/` and `README.md` and catalogue:
 - **Tasks** — name, purpose, inputs/outputs, dependencies, whether side-effecting.
 - **DSL surface** — every option in the `myPlugin { ... }` extension, with types, defaults, and which are
   closures.
-- **Pipelines** — multiphase logic (e.g. axion's 6-phase version inference). Number the phases; each
-  becomes a task or helper function depending on the desired level of incrementality.
+- **Tests** — the plugin's own test suite. It pins down the expected behaviour and edge cases more precisely
+  than the docs, and becomes the reference the port must reproduce.
 - **Checks** — pre-action gates and their override flags.
 - **Hooks** — `pre`/`post`/`fileUpdate`/`commit`/`push` and the context each receives.
 - **CLI overrides** — every `-Pfoo.bar` flag.

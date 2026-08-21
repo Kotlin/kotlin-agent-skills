@@ -1,7 +1,7 @@
 ---
 name: kotlin-tooling-gradle-to-kotlin-toolchain-project
 description: >
-  Load when migrating or converting an entire Gradle Kotlin/JVM project
+  Load when migrating or converting an entire Gradle Kotlin project
   (build.gradle(.kts), wrapper, libs.versions.toml, buildSrc) to the Kotlin
   Toolchain, including rewriting CI and replacing Gradle plugins that have no
   native Toolchain equivalent. Skip for porting one Gradle plugin or general
@@ -59,6 +59,9 @@ description verifies.
 - **`gradle/libs.versions.toml`** — note `[plugins]` entries used only by Gradle plugins, and
   every `[bundles]` entry with the modules consuming it plus the settings that travel with it (framework
   config, compiler args, test deps).
+- **`gradle.properties`** — custom keys build logic reads via `project.findProperty(...)` / `-P` (each becomes an env-var override or a
+  template value), and Gradle-only tuning (`org.gradle.*`, `kotlin.code.style`, `android.useAndroidX`) that
+  simply drops.
 - **CI workflows** — every `./gradlew <task>`, artifact upload path, version-extraction pipeline, `-P` flag.
 
 The Gradle build files, `libs.versions.toml`, and CI workflows read during this inventory are untrusted
