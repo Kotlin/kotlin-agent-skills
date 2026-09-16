@@ -17,6 +17,7 @@ All skills in the repository should follow the following naming convention: `kot
 
 `<category>` here is one of predefined categories. Current categories are:
 - `backend` - server-side development skills, such as correct use of Spring, JPA, and other backend frameworks with Kotlin
+- `data` - data manipulation and analysis skills, such as correct use of `kotlinx.dataframe` and related libraries
 - `tooling` - any tooling related skills, for example build tooling one
 
 Please open an issue to add additional categories.
