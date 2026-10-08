@@ -33,6 +33,48 @@ Remember: in a multi-module project the namespace uses the **declaring** module'
 
 ---
 
+### Expected API Didn't Show Up (importedClangModules)
+
+**Symptom:** `Unresolved reference` for classes you expect from an SPM package, even though the import
+namespace is correct and the product is listed in `products`.
+
+**Background:** By default (`discoverClangModulesImplicitly = true`) the Clang modules of the declared
+products are discovered automatically and cinterop bindings are generated for them. Cinterop runs in
+a lenient mode that skips Clang modules that cannot be imported (for example, transitive C/C++
+modules), so no extra configuration is normally needed — including for Firebase. Do **not** set
+`discoverClangModulesImplicitly = false` or `importedClangModules` preemptively.
+
+**Why `importedClangModules` could still be needed:** It exists as a workaround for the rare case
+where automatic discovery doesn't expose the expected API, for example when the SPM product name
+differs from the Clang module that actually contains the Objective-C headers (e.g., the
+`FirebaseFirestore` product exposes its headers through the `FirebaseFirestoreInternal` Clang module).
+
+**Solution:** Only if the expected API is missing after checking the import namespace (see "Import
+Not Found" above):
+
+1. Find the Clang module that contains the missing headers (look at the package's `module.modulemap`
+   files or its public headers in the SPM checkout).
+2. Disable implicit discovery and list the modules explicitly with the typed API. Since implicit
+   discovery is off, list **every** Clang module you need:
+
+```kotlin
+swiftPMDependencies {
+    discoverClangModulesImplicitly = false
+
+    swiftPackage(
+        url = url("https://github.com/firebase/firebase-ios-sdk.git"),
+        version = from("12.6.0"),
+        products = listOf(product("FirebaseFirestore")),
+        importedClangModules = listOf("FirebaseFirestoreInternal"),
+    )
+}
+```
+
+If automatic discovery fails for a package you know well, consider reporting it to the Kotlin team
+rather than relying on this workaround permanently.
+
+---
+
 ### Gradle Sync Fails
 
 **Symptom:** IDE fails to sync project after adding swiftPMDependencies
@@ -127,64 +169,10 @@ Or build scripts can't access files or run Gradle.
 
 ## Firebase-Specific Issues
 
-### cinterop Failures on C++ Modules (gRPC, abseil, leveldb, BoringSSL)
-
-**Symptom:** Build fails with cinterop errors on modules like `grpc`, `absl`, `leveldb`, `openssl_grpc`, or other C++ transitive dependencies of Firebase.
-
-**Cause:** `discoverClangModulesImplicitly = true` (the default) makes Kotlin attempt cinterop on every Clang module in the dependency graph, including C++ modules that are not compatible.
-
-**Solution:** Set `discoverClangModulesImplicitly = false` and explicitly list only the Firebase Clang modules you need:
-
-```kotlin
-swiftPMDependencies {
-    discoverClangModulesImplicitly = false
-
-    swiftPackage(
-        url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-        version = from("12.6.0"),
-        products = listOf(product("FirebaseAnalytics"), /* ... */),
-        importedClangModules = listOf("FirebaseAnalytics", "FirebaseCore", /* ... */),
-    )
-}
-```
-
-See [common-packages.md](common-packages.md) for the full importedClangModules reference.
-
----
-
-### Firebase Classes Not Found (Wrong Clang Module Name)
-
-**Symptom:** `Unresolved reference` for Firebase classes like `FIRDatabase`, `FIRRemoteConfig`, `FIRFirestore`, `FIRInAppMessaging` even though the product is listed.
-
-**Cause:** Several Firebase products expose ObjC headers through Clang modules whose names differ from the SPM product name. Using the product name in `importedClangModules` won't find the headers.
-
-**Solution:** Use the correct internal Clang module names:
-
-| SPM Product | Correct importedClangModules entry |
-|---|---|
-| FirebaseDatabase | `FirebaseDatabaseInternal` |
-| FirebaseFirestore | `FirebaseFirestoreInternal` |
-| FirebaseInAppMessaging-Beta | `FirebaseInAppMessagingInternal` |
-| FirebaseRemoteConfig | `FirebaseRemoteConfigInternal` |
-
----
-
-### FirebaseFirestore Import Errors
-
-**Symptom:** Can't import FIRFirestore classes
-
-**Cause:** Firestore's Clang module name differs from product name. The internal Clang module exposed to Objective-C is `FirebaseFirestoreInternal`, not `FirebaseFirestore`.
-
-**Solution:** Add explicit importedClangModules:
-
-```kotlin
-swiftPackage(
-    url = url("https://github.com/firebase/firebase-ios-sdk.git"),
-    version = from("12.6.0"),
-    products = listOf(product("FirebaseFirestore")),
-    importedClangModules = listOf("FirebaseFirestoreInternal"),  // Required
-)
-```
+If Firebase classes such as `FIRDatabase`, `FIRRemoteConfig`, `FIRFirestore`, or `FIRInAppMessaging`
+are unresolved, see "Expected API Didn't Show Up (importedClangModules)" above. Some Firebase products
+expose their headers through `*Internal` Clang modules (`FirebaseDatabaseInternal`,
+`FirebaseFirestoreInternal`, `FirebaseInAppMessagingInternal`, `FirebaseRemoteConfigInternal`).
 
 ---
 
@@ -234,28 +222,6 @@ Also set **Debug Information Format** to `DWARF with dSYM File` for all build co
 
 ---
 
-## Google Maps Issues
-
-### GoogleMaps Version Not Found
-
-**Symptom:** SPM can't resolve GoogleMaps package
-
-**Solution:** GoogleMaps requires exact version matching:
-
-```kotlin
-swiftPackage(
-    url = url("https://github.com/googlemaps/ios-maps-sdk.git"),
-    version = exact("10.6.0"),  // Must use exact(), not from()
-    products = listOf(
-        product("GoogleMaps", platforms = setOf(iOS()))
-    ),
-)
-```
-
-Check [releases page](https://github.com/googlemaps/ios-maps-sdk/releases) for valid versions.
-
----
-
 ## KSP (Kotlin Symbol Processing) Compatibility
 
 KSP should generally work with the target Kotlin version without any changes. If KSP fails after
@@ -272,8 +238,12 @@ If the integration tasks need to be run manually, discover the paths and run the
 # Find the iOS app directory (contains the app .xcodeproj)
 XCODEPROJ=$(realpath "$(find . -maxdepth 3 -name "*.xcodeproj" -type d | grep -v Pods | head -1)")
 
-# Find KMP module with swiftPMDependencies (module directory name)
-KMP_MODULE=$(grep -rl "swiftPMDependencies" --include="build.gradle.kts" . | head -1 | xargs dirname | xargs basename)
+# Find the KMP module (Gradle project path without the leading colon) that produces the framework
+# for Xcode: either declares embedAndSign*AppleFrameworkForXcode or the Swift Export
+# embedSwiftExportForXcode task
+KMP_MODULE=$(./gradlew tasks --all --console=plain -q \
+  | grep -E 'embedAndSign.*AppleFrameworkForXcode|embedSwiftExportForXcode' \
+  | head -1 | awk '{print $1}' | sed -E 's/^://; s/:?[^:]+$//')
 
 XCODEPROJ_PATH="$XCODEPROJ" \
 GRADLE_PROJECT_PATH=":$KMP_MODULE" \
@@ -314,13 +284,16 @@ If issues persist:
 3. **Check generated files:**
    - Look in `moduleName/KotlinMultiplatformLinkedPackage/` for Package.swift
 
-4. **Inspect klib contents** using the `klib` tool ([docs](https://kotlinlang.org/docs/native-libraries.html#using-kotlin-native-compiler)):
+4. **Inspect klib contents** using the `klib` tool ([docs](https://kotlinlang.org/docs/native-libraries.html#klib-utility)):
    ```bash
    # Dump all API signatures from a klib
    klib dump-metadata-signatures /path/to/library.klib
 
    # Search for specific classes
    klib dump-metadata-signatures /path/to/library.klib | grep "ClassName"
+   
+   # Dump the metadata of all library declarations to the output
+   klib dump-metadata /path/to/library.klib
 
    # Find the generated swiftPMImport klib in build output
    find . -name "*.klib" -path "*swiftPMImport*"

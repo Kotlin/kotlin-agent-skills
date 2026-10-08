@@ -1,8 +1,8 @@
 ---
 name: kotlin-tooling-spm-dependencies
 description: >
-  Add and manage Swift Package Manager dependencies in Kotlin Multiplatform projects using the
-  swiftPMDependencies {} DSL — declare swiftPackage()/localSwiftPackage(), transform imports to
+  Add and manage Swift Package Manager dependencies in Gradle-based Kotlin Multiplatform projects using
+  the swiftPMDependencies {} DSL — declare swiftPackage()/localSwiftPackage(), transform imports to
   swiftPMImport.*, and wire the Xcode project (integrateEmbedAndSign / integrateLinkagePackage).
   Use when adding SPM dependencies to a KMP module (including a greenfield project with no prior
   native dependencies), or when the user mentions swiftPMDependencies, swiftPackage, swiftPMImport,
@@ -87,12 +87,13 @@ for the typed API.
 
 **Key concepts:**
 - `products` = SPM product names (controls linking).
-- `importedClangModules` = Clang module names for cinterop bindings (only consulted when `discoverClangModulesImplicitly = false`).
-- `discoverClangModulesImplicitly` defaults to `true` (generates bindings for all accessible Clang modules). Set it to `false` when transitive C/C++ modules fail cinterop (Firebase, gRPC), then list the needed modules explicitly in `importedClangModules`.
+- `discoverClangModulesImplicitly` defaults to `true`: bindings are generated automatically for the Clang modules of the declared products, and modules that can't be imported are skipped. Leave it at the default — including for Firebase.
+- `importedClangModules` = explicit Clang module list, only consulted when `discoverClangModulesImplicitly = false`. It is a troubleshooting fallback for when the expected API doesn't show up; see [troubleshooting.md](references/troubleshooting.md) § "Expected API Didn't Show Up".
 
-**Important:** SPM product names and Clang module names don't always match (e.g., `FirebaseFirestore`
-→ `FirebaseFirestoreInternal`). Always consult [common-packages.md](references/common-packages.md)
-for correct values.
+**Note:** SPM product names and Clang module names don't always match (e.g., `FirebaseFirestore`
+→ `FirebaseFirestoreInternal`). Automatic discovery handles this; see
+[common-packages.md](references/common-packages.md) for known mappings if you need to fall back to
+explicit `importedClangModules`.
 
 ```kotlin
 kotlin {
@@ -217,8 +218,12 @@ Discover the paths and run both tasks directly:
 # Find the iOS app directory (the one containing the app .xcodeproj)
 XCODEPROJ=$(realpath "$(find . -maxdepth 3 -name "*.xcodeproj" -type d | grep -v Pods | head -1)")
 
-# Find the KMP module that declares swiftPMDependencies (module directory name)
-KMP_MODULE=$(grep -rl "swiftPMDependencies" --include="build.gradle.kts" . | head -1 | xargs dirname | xargs basename)
+# Find the KMP module (Gradle project path without the leading colon) that produces the framework
+# for Xcode: either declares embedAndSign*AppleFrameworkForXcode or the Swift Export
+# embedSwiftExportForXcode task
+KMP_MODULE=$(./gradlew tasks --all --console=plain -q \
+  | grep -E 'embedAndSign.*AppleFrameworkForXcode|embedSwiftExportForXcode' \
+  | head -1 | awk '{print $1}' | sed -E 's/^://; s/:?[^:]+$//')
 
 XCODEPROJ_PATH="$XCODEPROJ" \
 GRADLE_PROJECT_PATH=":$KMP_MODULE" \
@@ -261,8 +266,9 @@ a step fails, diagnose with [troubleshooting.md](references/troubleshooting.md),
 ```
 
 If compilation fails with unresolved references, check the import transformations (Step 2) and the
-SwiftPM dependency declarations (Step 1.2). Common causes: missing `importedClangModules`, wrong
-Clang module names.
+SwiftPM dependency declarations (Step 1.2). If the expected API is still missing, see
+[troubleshooting.md](references/troubleshooting.md) § "Expected API Didn't Show Up"
+(`importedClangModules` fallback).
 
 ### 4.2 Link the framework
 

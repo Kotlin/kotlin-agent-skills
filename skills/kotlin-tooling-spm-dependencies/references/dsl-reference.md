@@ -162,11 +162,11 @@ By default, `discoverClangModulesImplicitly = true`. SwiftPM import automaticall
 
 **IMPORTANT:** When `discoverClangModulesImplicitly = true`, the `importedClangModules` parameter is ignored. Only set `importedClangModules` when `discoverClangModulesImplicitly = false`.
 
-**IMPORTANT for Firebase:** Set `discoverClangModulesImplicitly = false` when using Firebase. Firebase's transitive C++ dependencies (gRPC, abseil, leveldb, BoringSSL) contain Clang modules that fail cinterop generation. Disable implicit discovery and explicitly list only the Firebase modules you need in `importedClangModules`.
+Cinterop runs in a lenient mode that skips Clang modules that can't be imported (e.g., transitive C/C++ modules), so implicit discovery works for Firebase too. Keep the default.
 
-### Explicit Module Import
+### Explicit Module Import (Troubleshooting Fallback)
 
-When automatic discovery is disabled and the Clang module name differs from the product name, use the typed API:
+`importedClangModules` is a workaround for the rare case where the expected API doesn't show up with automatic discovery (see [troubleshooting.md](troubleshooting.md) § "Expected API Didn't Show Up"). When using it, disable automatic discovery and, if the Clang module name differs from the product name, use the typed API:
 
 ```kotlin
 swiftPMDependencies {
@@ -192,10 +192,9 @@ swiftPMDependencies {
 
 | Scenario | Use importedClangModules? |
 |----------|---------------------|
-| Simple API, product name = Clang module name | No (auto-defaulted from products) |
-| Product name != Clang module name | Yes (typed API) |
-| Multiple modules per product | Yes (typed API) |
-| Using discoverClangModulesImplicitly = false | Yes (typed API) |
+| Default setup (automatic discovery works) | No |
+| Expected API missing despite correct namespace and products | Yes (typed API, with `discoverClangModulesImplicitly = false`) |
+| Using discoverClangModulesImplicitly = false | Yes (list every needed module) |
 
 ---
 
