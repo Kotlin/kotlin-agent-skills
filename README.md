@@ -62,9 +62,29 @@ Copy the desired skill folder from [skills](./skills) into the skills directory 
 cp -r skills/kotlin-tooling-agp9-migration .claude/skills/
 ```
 
+### Kotlin documentation MCP server
+
+The Claude Code and Codex plugins also include the Kotlin documentation MCP server (`https://mcp.kotlinlang.org/mcp`).
+It lets your agent search the documentation on [kotlinlang.org](https://kotlinlang.org/docs/home.html) and read
+full documentation pages. The server is enabled automatically when you install the plugin.
+
+The skills CLI and manual installation copy only the skills. To add the server yourself:
+
+```bash
+# Claude Code
+claude mcp add --transport http kotlinlang https://mcp.kotlinlang.org/mcp
+
+# Codex
+codex mcp add kotlinlang --url https://mcp.kotlinlang.org/mcp
+```
+
+For other agents, add an HTTP (streamable HTTP) MCP server with the same URL.
+
 ### Repository layout
 
 - [skills/](./skills) - a directory where all skills are located
+- [plugins/kotlin-agent-skills/.mcp.json](./plugins/kotlin-agent-skills/.mcp.json) - MCP server configuration
+  for the Claude Code and Codex plugins
 
 ## Contributing
 
