@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "kotlinlang": {
+      "type": "http",
+      "url": "https://mcp.kotlinlang.org/mcp"
+    }
+  }
+}

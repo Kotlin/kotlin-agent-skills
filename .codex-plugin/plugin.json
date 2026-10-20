@@ -1,6 +1,6 @@
 {
     "name": "kotlin-agent-skills",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "AI agent skills for Kotlin projects.",
     "author": {
         "name": "Kotlin",
@@ -19,5 +19,6 @@
         "capabilities": ["Read", "Write"],
         "websiteURL": "https://kotlinlang.org/"
     },
-    "skills": "./skills"
+    "skills": "./skills",
+    "mcpServers": "./plugins/kotlin-agent-skills/.mcp.json"
 }
