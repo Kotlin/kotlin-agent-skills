@@ -2,16 +2,23 @@
 
 ## When This Applies
 
-Detected when imports match `io.reactivex.*` or `rx.*`. This is a significant paradigm
-shift — RxJava reactive types map to Kotlin coroutines and Flow.
+Detected when imports match `io.reactivex.*` or `rx.*`.
+
+**Default: keep RxJava.** Moving to coroutines/Flow is a paradigm shift *and* a dependency change —
+it rewrites call sites across the project and will not compile without new dependencies. Converting a
+file translates the RxJava code to Kotlin syntax and leaves the reactive types in place.
+
+Use the mappings below **only** when the project already depends on coroutines, or the user explicitly
+asked for the migration.
 
 ## Key Rules
 
 ### 1. Dependency setup
 
-Add `kotlinx-coroutines-core` and `kotlinx-coroutines-rx3` (or `kotlinx-coroutines-rx2`)
-as dependencies if performing a gradual migration. The bridge library provides extension
-functions like `asFlow()` and `asObservable()` for interop at module boundaries.
+A gradual migration needs `kotlinx-coroutines-core` and `kotlinx-coroutines-rx3` (or
+`kotlinx-coroutines-rx2`). The bridge library provides extension functions like `asFlow()` and
+`asObservable()` for interop at module boundaries. Adding these is a project-level change — ask
+first; never add them as part of converting a file.
 
 ### 2. Type mapping
 

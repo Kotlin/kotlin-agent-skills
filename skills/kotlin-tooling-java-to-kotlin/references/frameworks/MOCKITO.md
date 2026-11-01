@@ -4,10 +4,13 @@
 
 Detected when imports match `org.mockito.*`.
 
-While Mockito works in Kotlin, MockK is the idiomatic Kotlin mocking library. Convert
-to MockK when the project already uses MockK or is doing a full Kotlin migration. If
-the project wants to keep Mockito, convert only the Java syntax to Kotlin syntax using
-the `mockito-kotlin` helper library.
+**Default: keep Mockito.** Mockito works fine in Kotlin, and swapping to MockK is a dependency
+change — code referencing a library the build does not have will not compile. Converting a file
+translates the Java syntax to Kotlin syntax and leaves the mocking library alone; where
+`mockito-kotlin` is already a dependency, use it to make that read better.
+
+Use the MockK table below **only** when the project already depends on MockK, or the user explicitly
+asked for the migration.
 
 ## Key Rules
 
