@@ -1,6 +1,9 @@
 ---
 name: kotlin-tooling-cocoapods-spm-migration
-description: Migrate KMP projects from CocoaPods (kotlin("native.cocoapods")) to Swift Package Manager (swiftPMDependencies DSL) — replaces pod() with swiftPackage(), transforms cocoapods.* imports to swiftPMImport.*, and reconfigures the Xcode project.
+description: >
+   Migrate KMP projects from CocoaPods (kotlin("native.cocoapods")) to
+   Swift Package Manager (swiftPMDependencies DSL) — replaces pod() with swiftPackage(),
+   transforms cocoapods.* imports to swiftPMImport.*, and reconfigures the Xcode project.
 license: Apache-2.0
 metadata:
   author: JetBrains
@@ -10,6 +13,15 @@ metadata:
 # CocoaPods to SwiftPM Migration for KMP
 
 Migrate Kotlin Multiplatform projects from `kotlin("native.cocoapods")` to `swiftPMDependencies {}` DSL.
+
+> **This skill builds on `kotlin-tooling-spm-dependencies`.** That skill is the authoritative
+> reference for everything SPM: the `swiftPMDependencies {}` DSL, the `group` property and opt-in
+> annotations, the `swiftPMImport.*` import-namespace formula, Xcode integration
+> (`integrateEmbedAndSign` / `integrateLinkagePackage`, sandboxing), package configuration for
+> popular libraries, and verification. **This skill covers only the CocoaPods-removal specifics** —
+> pre-migration analysis, the "keep `cocoapods {}` alongside until the end" strategy, pod→SPM
+> mapping, preserving third-party bundled klibs, deintegration, and the migration report. Consult
+> `kotlin-tooling-spm-dependencies` whenever a step concerns SPM itself rather than CocoaPods.
 
 ## Requirements
 
@@ -152,17 +164,22 @@ kotlin = "2.4.0-Beta2"
 
 **Do NOT remove the `cocoapods {}` block or `kotlin("native.cocoapods")` plugin yet.** Add `swiftPMDependencies {}` alongside the existing CocoaPods configuration.
 
-### 3.1 Add group property
+> The mechanics of writing the `swiftPMDependencies {}` block — the `group` property (and its
+> Compose Resources implications), the simple-vs-typed API, `products`, `importedClangModules`,
+> `discoverClangModulesImplicitly`, framework `isStatic`, and the opt-in annotations — are all
+> documented in the **`kotlin-tooling-spm-dependencies`** skill. This phase covers only the
+> migration-specific rules layered on top: keeping CocoaPods alongside, preserving exact versions,
+> not splitting a library suite across package managers, and Podfile-only dependencies.
 
-```kotlin
-group = "org.example.myproject"  // Required for import namespace
-```
+### 3.1 Add the `group` property
 
-**Compose Resources warning:** If the project uses Compose Multiplatform resources (`org.jetbrains.compose` plugin or `compose.resources`), the `group` property is also used as the namespace for generated resource accessors (e.g., `Res.string.*`, `Res.drawable.*`). If `group` already exists in `build.gradle.kts`, do **not** change it. If you are adding `group` for the first time, warn the user that existing Compose resource accessor call sites throughout the project will change namespace and may need updating.
+Add `group` if it is not already present — it forms the `swiftPMImport.*` namespace (see the
+`kotlin-tooling-spm-dependencies` skill for details, including the Compose Resources warning when
+adding `group` for the first time).
 
 ### 3.2 Add swiftPMDependencies block alongside cocoapods
 
-For each pod dependency, add the equivalent SwiftPM package declaration. Use [common-pods-mapping.md](references/common-pods-mapping.md) to map each pod to its SPM package URL, product name, and `importedClangModules`.
+For each pod dependency, add the equivalent SwiftPM package declaration. Use [common-pods-mapping.md](references/common-pods-mapping.md) to map each pod to its SPM package URL, product name, and `importedClangModules` (it points to `kotlin-tooling-spm-dependencies`'s common-packages reference for the full per-library configuration).
 
 **Version preservation:** Do NOT bump dependency versions during migration. Use the exact same version that was specified in the `cocoapods {}` block. Changing versions can resolve to different library builds that break cinterop APIs (removed symbols, changed signatures) and introduce issues unrelated to the migration itself.
 
@@ -172,15 +189,10 @@ For each pod dependency, add the equivalent SwiftPM package declaration. Use [co
 | `version = "~> 1.2"` (optimistic) | `version = "1.2.0"` (simple) or `from("1.2.0")` (typed) | `pod("FirebaseAuth") { version = "~> 12.5" }` → `version = "12.5.0"` |
 | No version specified | Ask user which version to pin | Ask the user which version to use |
 
-**Two API forms:** The DSL has a simple string API and a typed API. **Use the simple string API** for most packages:
-```kotlin
-swiftPackage(url = "https://github.com/owner/repo.git", version = "1.0.0", products = listOf("ProductName"))
-```
-The simple API auto-defaults `importedClangModules` to the `products` list. Use the typed API (with `url()`, `exact()`, `product()` wrappers) only when you need exact version pinning, platform constraints, or explicit Clang module control. See [dsl-reference.md](references/dsl-reference.md) for the typed API.
-
-**Key concepts:** `products` = SPM product names (controls linking). `importedClangModules` = Clang module names for cinterop bindings (only when `discoverClangModulesImplicitly = false`). `discoverClangModulesImplicitly` defaults to `true` (bindings for all Clang modules); set `false` when transitive C/C++ modules fail cinterop (Firebase, gRPC), then list needed modules explicitly.
-
-**Important:** SPM product names and Clang module names don't always match. Always consult [common-pods-mapping.md](references/common-pods-mapping.md) for correct values.
+> For the DSL itself — simple vs typed API, `products`, `importedClangModules`,
+> `discoverClangModulesImplicitly`, and the fact that SPM product names and Clang module names don't
+> always match — see the **`kotlin-tooling-spm-dependencies`** skill. Below are only the rules that
+> are specific to migrating from CocoaPods.
 
 **Podfile-only dependencies:** If Phase 1 step 9 identified dependencies that exist in the `Podfile` but not in the Gradle `cocoapods {}` block, these must also be added to `swiftPMDependencies` as `products` entries. Even though the KMP module didn't declare them, they were linked into the app by CocoaPods and may be required for the app to build. Look up each Podfile-only pod's SPM package URL and add it as a `swiftPackage()` with at least its `products`. If any of these pods were used via cinterop (check for `import cocoapods.*` statements referencing them), also add `importedClangModules`.
 
@@ -233,40 +245,20 @@ See [common-pods-mapping.md](references/common-pods-mapping.md) § dev.gitlive a
 
 ### 3.5 Add opt-in annotations
 
-The `swiftPackage()` and `localSwiftPackage()` DSL functions are annotated with `@ExperimentalKotlinGradlePluginApi`. Add this opt-in to suppress the compiler warning:
-
-```kotlin
-@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
-```
-
-Place this at the top of each `build.gradle.kts` file that calls `swiftPackage()` or `localSwiftPackage()`.
-
-Also add the cinterop opt-in for Kotlin source files:
-
-```kotlin
-kotlin.compilerOptions {
-    optIn.add("kotlinx.cinterop.ExperimentalForeignApi")
-}
-```
-
-For full DSL reference, see [dsl-reference.md](references/dsl-reference.md).
+Add the `@ExperimentalKotlinGradlePluginApi` file opt-in (for `swiftPackage()`/`localSwiftPackage()`)
+and the `kotlinx.cinterop.ExperimentalForeignApi` compiler opt-in. See the
+`kotlin-tooling-spm-dependencies` skill for the exact snippets and full DSL reference.
 
 ---
 
 ## Phase 4: Kotlin Source Updates
 
-### Import Namespace Formula
-
-```
-swiftPMImport.<group>.<module>.<ClassName>
-
-Where:
-- group: build.gradle.kts `group` property of the MODULE THAT DECLARES the swiftPMDependencies, dashes (-) → dots (.)
-- module: Gradle module name of the MODULE THAT DECLARES the swiftPMDependencies, dashes (-) → dots (.), underscores (_) preserved as-is
-- ClassName: Objective-C class name (FIR* for Firebase, GMS* for Google Maps)
-```
-
-**The namespace uses the declaring module's group+name, not the importing module's.** This is the most common mistake agents make. When module A depends on module B, and module B declares `swiftPMDependencies`, module A imports SPM classes using module B's group and module name — NOT module A's.
+Migration replaces each `import cocoapods.<Module>.<Class>` with the SwiftPM equivalent
+`import swiftPMImport.<group>.<module>.<Class>`. The **import-namespace formula** (including the
+critical rule that the namespace uses the *declaring* module's `group`+name, not the importing
+module's, and that the Clang module name flattens out of the path) is documented in the
+**`kotlin-tooling-spm-dependencies`** skill. The transformations below show how that applies when
+the *source* of the import is a CocoaPods `cocoapods.*` statement.
 
 ### Example Transformation — Single Module
 
@@ -350,19 +342,13 @@ Run this command. It modifies the `.xcodeproj` to trigger `embedAndSignAppleFram
 
 The `integrateLinkagePackage` task generates `KotlinMultiplatformLinkedPackage/` at `<iosDir>/` — a local Swift package that mirrors your `products` list and ensures SPM libraries are linked into the final binary.
 
-After running the integration tasks, **disable User Script Sandboxing** (`ENABLE_USER_SCRIPT_SANDBOXING = NO`) in the `.xcodeproj`. Xcode 16+ enables it by default, which prevents the Gradle build phase from writing to the project directory:
+After running the integration tasks, **disable User Script Sandboxing** (`ENABLE_USER_SCRIPT_SANDBOXING = NO`) in the `.xcodeproj` — Xcode 16+ enables it by default and it blocks the Gradle build phase. See the `kotlin-tooling-spm-dependencies` skill (Step 3.2) for the exact `sed` command and the `./gradlew --stop` follow-up.
 
-```bash
-sed -i '' 's/ENABLE_USER_SCRIPT_SANDBOXING = YES/ENABLE_USER_SCRIPT_SANDBOXING = NO/g' "$XCODEPROJ_PATH/project.pbxproj"
-```
-
-If the setting is absent (Xcode defaults to YES), add `ENABLE_USER_SCRIPT_SANDBOXING = NO;` to the app target's `buildSettings` sections. Then restart the Gradle daemon: `./gradlew --stop`
-
-**Alternative (if xcodebuild approach fails):** See [troubleshooting.md](references/troubleshooting.md) § "Manual Integration Command Discovery" for a fallback script to discover paths and run integration tasks directly.
+**Alternative (if the xcodebuild approach above fails):** discover the paths and run the integration tasks directly — see the `kotlin-tooling-spm-dependencies` skill's troubleshooting § "Manual Integration Command Discovery".
 
 ### 5.2 Update Crashlytics dSYM upload script (if applicable)
 
-If the project uses FirebaseCrashlytics and has a dSYM upload run script phase (identified in Phase 1 step 11), update the script path from `${PODS_ROOT}/FirebaseCrashlytics/upload-symbols` to `"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"`. See [troubleshooting.md](references/troubleshooting.md) § "Firebase Crashlytics: dSYM Upload Script" and [common-pods-mapping.md](references/common-pods-mapping.md) for the full script and input files list.
+If the project uses FirebaseCrashlytics and has a dSYM upload run script phase (identified in Phase 1 step 11), update the script path from the CocoaPods-era `${PODS_ROOT}/FirebaseCrashlytics/upload-symbols` to the SPM path `"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"`. See the `kotlin-tooling-spm-dependencies` skill (common-packages § FirebaseCrashlytics, and troubleshooting § "Firebase Crashlytics: dSYM Upload Script") for the full script and input-files list.
 
 ### 5.3 Deintegrate CocoaPods
 
@@ -409,7 +395,7 @@ cd /path/to/iosApp && pod install
 
 ### 5.4 Manual integration (if automatic fails)
 
-See [troubleshooting.md](references/troubleshooting.md) § "Manual Xcode Integration Steps" for the 5-step manual setup (build phase, sandboxing, linkage package).
+See the `kotlin-tooling-spm-dependencies` skill's troubleshooting § "Manual Xcode Integration Steps" for the 5-step manual setup (build phase, sandboxing, linkage package).
 
 ---
 
@@ -458,7 +444,7 @@ See [cocoapods-extras-patterns.md](references/cocoapods-extras-patterns.md) for 
 
 ## Phase 7: Verification
 
-**Do NOT stop until the application builds successfully.** This phase is iterative — if any step fails, diagnose the error, fix it (consulting [troubleshooting.md](references/troubleshooting.md) and re-checking Phases 2–6), and re-run the failing step. Repeat until the build succeeds or the issue is clearly outside the migration scope (pre-existing bug, unrelated tooling problem). Do NOT write the migration report (Phase 8) until the build succeeds.
+**Do NOT stop until the application builds successfully.** This phase is iterative — if any step fails, diagnose the error, fix it (consulting [troubleshooting.md](references/troubleshooting.md), the `kotlin-tooling-spm-dependencies` skill's troubleshooting for generic SPM errors, and re-checking Phases 2–6), and re-run the failing step. Repeat until the build succeeds or the issue is clearly outside the migration scope (pre-existing bug, unrelated tooling problem). Do NOT write the migration report (Phase 8) until the build succeeds.
 
 ### 7.1 Compile Kotlin code
 
@@ -496,7 +482,7 @@ xcodebuild -project *.xcodeproj -scheme "<AppScheme>" -destination 'generic/plat
 
 ### If the build fails
 
-**Do NOT revert the migration.** Read the error log, re-check Phases 2-6, and consult [troubleshooting.md](references/troubleshooting.md). If unsure, present options to the user — do not silently undo migration work. Fix the issue and re-run the failing verification step. Keep iterating until the build succeeds.
+**Do NOT revert the migration.** Read the error log, re-check Phases 2-6, and consult [troubleshooting.md](references/troubleshooting.md) (migration-specific issues) and the `kotlin-tooling-spm-dependencies` skill's troubleshooting (generic SPM issues). If unsure, present options to the user — do not silently undo migration work. Fix the issue and re-run the failing verification step. Keep iterating until the build succeeds.
 
 ---
 
@@ -516,8 +502,12 @@ The report must include:
 
 ## Additional Resources
 
-- [DSL Reference](references/dsl-reference.md) - Full swiftPMDependencies syntax
-- [Common Pods Mapping](references/common-pods-mapping.md) - Pod to SPM mapping table
+**This skill (CocoaPods-removal specifics):**
+- [Common Pods Mapping](references/common-pods-mapping.md) - Pod → SPM name mapping, version preservation, bundled-klib (KMPNotifier) and dev.gitlive migration handling
 - [CocoaPods Extras Patterns](references/cocoapods-extras-patterns.md) - Detection and cleanup patterns for CocoaPods workarounds
-- [Troubleshooting](references/troubleshooting.md) - Issues, solutions, rollback
+- [Troubleshooting](references/troubleshooting.md) - Migration-specific issues, rollback
 - [Migration Report Template](references/migration-report-template.md) - Post-migration report template
+
+**`kotlin-tooling-spm-dependencies` skill (everything SPM):** the `swiftPMDependencies {}` DSL, the
+`swiftPMImport.*` import-namespace formula, Xcode integration, per-library package configuration
+(Firebase, Google Maps, Google Sign-In, …), and generic SPM troubleshooting.
