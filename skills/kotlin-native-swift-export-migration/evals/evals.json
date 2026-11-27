@@ -1,0 +1,55 @@
+{
+  "skill_name": "kotlin-native-swift-export-migration",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Migrate this project's iOS app from the Objective-C export to Swift Export, using Kotlin 2.5.0-RC2. Decisions: Kotlin 2.5.0-RC2 is the version I want. Bumping the iOS deployment target to 18.0 is fine. You may remove the multiplatform-swiftpackage packaging plugin; SwiftExecutablePackage may stay out of scope. If the Koin compiler plugin has no release that works with Kotlin 2.5.0-RC2, you may replace it with the Koin DSL as a temporary change. Don't bump plugins that work. Work on a new branch, don't push.",
+      "files": [
+        "https://github.com/joreilly/PeopleInSpace/tree/3a10b125dcd0e62335e70e64b2204ccd4d356079"
+      ],
+      "expected_output": "PeopleInSpace builds its iOS app (PeopleInSpaceSwiftUI) through Kotlin Swift Export: SKIE is gone, :common declares export { swift { moduleName = \"common\"; rootPackage = \"dev.johnoreilly.common\" } } instead of binaries.framework, a thin :ios-export umbrella module with api(project(\":common\")) and xcodeIntegration() is added, the Xcode Run Script calls :ios-export:embedSwiftExportForXcode, the deployment target is 18.0 and the Swift call sites use the Swift Export API. The Koin compiler plugin is replaced by the Koin DSL (temporary, reported), kotlin-native-nuget and every non-iOS target stay. The app runs and shows the people list, person details and the live ISS position.",
+      "assertions": [
+        "scripts/verify.sh --project PeopleInSpaceSwiftUI/PeopleInSpaceSwiftUI.xcodeproj --scheme PeopleInSpaceSwiftUI --shared-dir common --targets PeopleInSpaceSwiftUI prints RESULT=PASS (clean Debug simulator build, embedSwiftExportForXcode ran, embedAndSignAppleFrameworkForXcode did not, no pbxproj leftovers, sandboxing NO and deployment target >= 18.0 in every configuration, no deprecated swiftExport {} DSL left).",
+        "The app launches on an iOS 18+ simulator; a Maestro flow over the People list, a person's detail screen and the ISS Position tab passes, and the screenshots show real data (astronaut names, non-zero ISS coordinates after the first poll).",
+        "./gradlew :common:compileKotlinJvm :common:compileKotlinWasmJs :backend:compileKotlinJvm :compose-desktop:compileKotlin succeeds.",
+        "Non-iOS plugins and targets are unchanged against the baseline: kotlin-native-nuget, mingwX64, wasmJs, JVM, Android, desktop and server modules are still present and configured as before.",
+        "No dependency is hidden with SwiftExportVisibility.HIDDEN; library api dependencies are handled by the :ios-export umbrella module.",
+        "Only SKIE, the Koin compiler plugin (approved) and multiplatform-swiftpackage (approved) are removed; the agent's report names the Koin DSL rewrite as temporary and lists SwiftExecutablePackage and the macOS target as out of scope.",
+        "The work is on a branch, nothing is pushed."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Migrate this project's iOS app from the Objective-C export to Swift Export, using Kotlin 2.5.0-RC2. Decisions: Kotlin 2.5.0-RC2 is the version I want. Bumping the iOS deployment target to 18.0 is fine. Don't bump plugins that work. Work on a new branch, don't push.",
+      "files": [
+        "https://github.com/joreilly/WordMasterKMP/tree/cc63598c87c019a5fd7a62fef4acc6d098a97cc5"
+      ],
+      "expected_output": "WordMasterKMP builds its iOS app through Kotlin Swift Export exported directly from :shared (no library api dependencies, so no umbrella module). KMP-NativeCoroutines is kept in its Swift Export compatibility mode (a -kotlin-2.5.0-RC build, nativeCoroutines { swiftExport = true }, annotations kept), existing asyncSequence(for:) call sites keep compiling, the Kotlin enum statuses reach Swift through an enum-free shape (KT-90088 workaround) and public ArrayList types become List. The game scores a guess with correct letter colours on the board and the keyboard.",
+      "assertions": [
+        "scripts/verify.sh --project iosApp/iosApp.xcodeproj --scheme iosApp --shared-dir shared prints RESULT=PASS.",
+        "KMP-NativeCoroutines is still applied with nativeCoroutines { swiftExport = true } and a plugin version built for Kotlin 2.5 (e.g. 1.0.7-kotlin-2.5.0-RC); the @NativeCoroutines annotations are still present.",
+        "The app launches without crashing; after a guess, the board and keyboard colours match the answer printed by the app (correct position green, wrong position yellow, absent grey).",
+        "./gradlew :shared:jvmTest :compose-desktop:compileKotlin succeeds.",
+        "No public Kotlin declaration exposes ArrayList/HashMap types to Swift, and Swift doesn't collect a flow whose element contains a Kotlin enum inside a collection.",
+        "No deprecated swiftExport {} DSL block exists in any build file.",
+        "The work is on a branch, nothing is pushed."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Migrate this project's iOS app from the Objective-C export to Swift Export. Don't ask me questions; if something needs my decision, stop and list it.",
+      "files": [
+        "https://github.com/joreilly/PeopleInSpace/tree/3a10b125dcd0e62335e70e64b2204ccd4d356079"
+      ],
+      "expected_output": "The agent runs the Phase 0 inventory and toolchain probe, then stops before switching Gradle/Xcode and lists every open decision in one message: the iOS deployment target bump to 18.0, the multiplatform-swiftpackage packaging plugin, the Kotlin 2.5 pre-release, and the Koin compiler plugin that has no Kotlin 2.5-compatible release (with the alternatives: wait for a release, keep an older Kotlin, or rewrite to the Koin DSL). It says the iOS app won't build until the migration continues and how to undo the probe.",
+      "assertions": [
+        "The agent stops after Phase 0 and does not add an :ios-export module, export { swift {} } blocks or Xcode changes.",
+        "The agent's final message lists the deployment-target bump, the packaging plugin, the Kotlin pre-release and the Koin compiler plugin as decisions.",
+        "The Koin compiler plugin and its annotations are not rewritten or removed.",
+        "'Plugins behind their latest release' is not asked as a question.",
+        "The message explains that the iOS app won't build until the migration continues and how to undo the probe edits (git stash or git restore of the changed files).",
+        "Nothing is pushed."
+      ]
+    }
+  ]
+}
