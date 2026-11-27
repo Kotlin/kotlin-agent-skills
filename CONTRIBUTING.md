@@ -22,17 +22,20 @@ In case we move past the initial approval stage, the submitted skill must follow
 - Check out the [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator) skill.
 - SKILL.md frontmatter must contain the following fields:
  ```yaml
-name: 
-description:
+name: kotlin-<category>-<functional-name>
+description: >
+  Load when ...
+license: Apache-2.0
 metadata:
   author: github:@your-handle
-  version: 0.1.0
-  tested_models:
-      provider: xxx
-      model: xxx
-      agent_version: xxx
-      last_eval: 2026-06-10
+  version: "0.1.0"
+  provider: anthropic
+  tested_models: "anthropic/claude-sonnet-5, anthropic/claude-opus-5"
+  agent_version: "claude-code 2.1.332"
+  last_eval: "2026-06-10"
 ```
+  `metadata` is a flat map of strings (Agent Skills specification; CI fails on nested maps or non-string values):
+  quote versions and dates, and list several tested models comma-separated as `provider/model`.
  
 The description says when an agent should load the skill, not what it does or why it is needed. We rely on the style guidelines from [Perplexity Research](https://research.perplexity.ai/articles/designing-refining-and-maintaining-agent-skills-at-perplexity):
 - Starts with “Load, when..”
@@ -57,7 +60,7 @@ If possible, include a comparison of agent performance with and without the skil
 - ✅ No overlap with existing skills
 - ✅ The skill must follow the Agent Skills specification
 - ✅ Naming: kotlin-<category>-<functional-name>, correct category assigned
-- ✅ SKILL.md has valid YAML frontmatter: name, description, required metadata: author, version, tested_models (provider/model/agent_version), last_eval
+- ✅ SKILL.md has valid YAML frontmatter: name, description, required metadata (all string values): author, version, provider, tested_models, agent_version, last_eval
 - ✅ Description tells when to load the skill and is ≤ 50 words
 - ✅ Clear documentation and use cases
 - ✅ No security vulnerabilities or malicious code
